@@ -12,14 +12,16 @@ export default async function HomePage() {
   } = await supabase.auth.getUser();
 
   let drills: DrillSummary[] = [];
+  let drillsError: string | null = null;
 
   if (user) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("drills")
       .select("id, title, one_liner, court_area, players_needed, updated_at")
       .order("updated_at", { ascending: false });
 
     drills = (data ?? []) as DrillSummary[];
+    drillsError = error?.message ?? null;
   }
 
   const primaryDrill = drills[0] ?? null;
@@ -111,6 +113,15 @@ export default async function HomePage() {
             </div>
             <div className="rounded-[1.9rem] border border-white/80 bg-white/82 p-6 shadow-[0_22px_60px_rgba(7,58,103,0.08)] backdrop-blur">
               <h2 className="text-xl font-black tracking-tight text-[#052b4b]">Drill library</h2>
+              <div className="mt-4 rounded-2xl border border-dashed border-[#b9e1ff] bg-[#f7fbff] px-4 py-3 text-xs text-[#073a67]">
+                <span className="font-bold uppercase tracking-[0.16em]">Debug</span>
+                <div className="mt-2 space-y-1 normal-case tracking-normal">
+                  <p>User: {user?.email ?? "not signed in"}</p>
+                  <p>User ID: {user?.id ?? "none"}</p>
+                  <p>Drill count: {drills.length}</p>
+                  <p>Query error: {drillsError ?? "none"}</p>
+                </div>
+              </div>
               <div className="mt-4">
                 {!user ? (
                   <p className="text-sm text-slate-600">Sign in to load your drills from Supabase.</p>
