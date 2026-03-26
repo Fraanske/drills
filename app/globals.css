@@ -2,15 +2,24 @@
 
 :root {
   color-scheme: light;
+  --hf-navy: #073a67;
+  --hf-navy-deep: #052b4b;
+  --hf-blue: #0c6cb5;
+  --hf-sky: #dff2ff;
+  --hf-gold: #ffd21f;
+  --hf-cream: #fffdf4;
+  --hf-ink: #0e2340;
 }
 
 html,
 body {
   padding: 0;
   margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
-  background: #f8fafc;
-  color: #0f172a;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at top, rgba(255, 210, 31, 0.12), transparent 22rem),
+    linear-gradient(180deg, #eef7ff 0%, #f7fbff 48%, #eef4fb 100%);
+  color: var(--hf-ink);
 }
 
 * {
@@ -27,4 +36,8 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+::selection {
+  background: rgba(255, 210, 31, 0.35);
 }
