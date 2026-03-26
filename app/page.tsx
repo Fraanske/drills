@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { signOut } from "@/app/(auth)/sign-in/actions";
 import { DrillList } from "@/components/drill-list";
+import { getSupabaseServerClient } from "@/lib/supabase-server";
 import type { DrillSummary } from "@/lib/types";
 
 const starterDrills: DrillSummary[] = [
@@ -21,7 +23,12 @@ const starterDrills: DrillSummary[] = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = await getSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <main className="min-h-screen bg-slate-50">
       <section className="mx-auto max-w-7xl px-6 py-10">
@@ -34,13 +41,33 @@ export default function HomePage() {
                 Shared drill library with editable online flow diagrams. This scaffold is intentionally narrow: auth, workspace-ready data model, drill pages, and a diagram editor payload.
               </p>
             </div>
-            <div className="flex gap-3">
-              <Link href="/drills/sample-1" className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white">
+            <div className="flex flex-col items-stretch gap-3 sm:items-end">
+              {user ? (
+                <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                  Signed in as <span className="font-semibold">{user.email}</span>
+                </div>
+              ) : (
+                <div className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  Not signed in
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <Link href="/drills/sample-1" className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white">
                 Open sample drill
-              </Link>
-              <Link href="/sign-in" className="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-medium text-slate-800">
-                Sign in page
-              </Link>
+                </Link>
+                {user ? (
+                  <form action={signOut}>
+                    <button type="submit" className="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-medium text-slate-800">
+                      Sign out
+                    </button>
+                  </form>
+                ) : (
+                  <Link href="/sign-in" className="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-medium text-slate-800">
+                    Sign in page
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
         </div>
