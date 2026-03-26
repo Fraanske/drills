@@ -59,19 +59,6 @@ create table if not exists public.diagrams (
   updated_at timestamptz not null default now()
 );
 
-create or replace function public.user_is_workspace_member(check_workspace_id uuid)
-returns boolean
-language sql
-stable
-as $$
-  select exists (
-    select 1
-    from public.workspace_members wm
-    where wm.workspace_id = check_workspace_id
-      and wm.user_id = auth.uid()
-  );
-$$;
-
 alter table public.workspaces enable row level security;
 alter table public.workspace_members enable row level security;
 alter table public.drills enable row level security;
@@ -79,94 +66,177 @@ alter table public.tags enable row level security;
 alter table public.drill_tags enable row level security;
 alter table public.diagrams enable row level security;
 
-create policy "workspace members can view workspaces"
-  on public.workspaces for select
-  using (public.user_is_workspace_member(id));
-
-create policy "workspace members can view memberships"
-  on public.workspace_members for select
-  using (public.user_is_workspace_member(workspace_id));
-
-create policy "workspace admins can manage memberships"
-  on public.workspace_members for all
+create policy "users can view their own workspaces"
+  on public.workspaces
+  for select
   using (
     exists (
-      select 1 from public.workspace_members wm
-      where wm.workspace_id = workspace_members.workspace_id
+      select 1
+      from public.workspace_members wm
+      where wm.workspace_id = workspaces.id
         and wm.user_id = auth.uid()
-        and wm.role = 'admin'
     )
-  )
+  );
+
+create policy "users can view their own memberships"
+  on public.workspace_members
+  for select
+  using (user_id = auth.uid());
+
+create policy "users can view drills in their workspaces"
+  on public.drills
+  for select
+  using (
+    exists (
+      select 1
+      from public.workspace_members wm
+      where wm.workspace_id = drills.workspace_id
+        and wm.user_id = auth.uid()
+    )
+  );
+
+create policy "users can insert drills in their workspaces"
+  on public.drills
+  for insert
   with check (
     exists (
-      select 1 from public.workspace_members wm
-      where wm.workspace_id = workspace_members.workspace_id
+      select 1
+      from public.workspace_members wm
+      where wm.workspace_id = drills.workspace_id
         and wm.user_id = auth.uid()
-        and wm.role = 'admin'
     )
   );
 
-create policy "workspace members can view drills"
-  on public.drills for select
-  using (public.user_is_workspace_member(workspace_id));
-
-create policy "workspace coaches can insert drills"
-  on public.drills for insert
-  with check (public.user_is_workspace_member(workspace_id));
-
-create policy "workspace coaches can update drills"
-  on public.drills for update
-  using (public.user_is_workspace_member(workspace_id))
-  with check (public.user_is_workspace_member(workspace_id));
-
-create policy "workspace coaches can delete drills"
-  on public.drills for delete
-  using (public.user_is_workspace_member(workspace_id));
-
-create policy "workspace members can view tags"
-  on public.tags for select
-  using (public.user_is_workspace_member(workspace_id));
-
-create policy "workspace coaches can manage tags"
-  on public.tags for all
-  using (public.user_is_workspace_member(workspace_id))
-  with check (public.user_is_workspace_member(workspace_id));
-
-create policy "workspace members can view drill_tags"
-  on public.drill_tags for select
+create policy "users can update drills in their workspaces"
+  on public.drills
+  for update
   using (
     exists (
       select 1
-      from public.drills d
-      where d.id = drill_tags.drill_id
-        and public.user_is_workspace_member(d.workspace_id)
-    )
-  );
-
-create policy "workspace coaches can manage drill_tags"
-  on public.drill_tags for all
-  using (
-    exists (
-      select 1
-      from public.drills d
-      where d.id = drill_tags.drill_id
-        and public.user_is_workspace_member(d.workspace_id)
+      from public.workspace_members wm
+      where wm.workspace_id = drills.workspace_id
+        and wm.user_id = auth.uid()
     )
   )
   with check (
     exists (
       select 1
-      from public.drills d
-      where d.id = drill_tags.drill_id
-        and public.user_is_workspace_member(d.workspace_id)
+      from public.workspace_members wm
+      where wm.workspace_id = drills.workspace_id
+        and wm.user_id = auth.uid()
     )
   );
 
-create policy "workspace members can view diagrams"
-  on public.diagrams for select
-  using (public.user_is_workspace_member(workspace_id));
+create policy "users can delete drills in their workspaces"
+  on public.drills
+  for delete
+  using (
+    exists (
+      select 1
+      from public.workspace_members wm
+      where wm.workspace_id = drills.workspace_id
+        and wm.user_id = auth.uid()
+    )
+  );
 
-create policy "workspace coaches can manage diagrams"
-  on public.diagrams for all
-  using (public.user_is_workspace_member(workspace_id))
-  with check (public.user_is_workspace_member(workspace_id));
+create policy "users can view tags in their workspaces"
+  on public.tags
+  for select
+  using (
+    exists (
+      select 1
+      from public.workspace_members wm
+      where wm.workspace_id = tags.workspace_id
+        and wm.user_id = auth.uid()
+    )
+  );
+
+create policy "users can manage tags in their workspaces"
+  on public.tags
+  for all
+  using (
+    exists (
+      select 1
+      from public.workspace_members wm
+      where wm.workspace_id = tags.workspace_id
+        and wm.user_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1
+      from public.workspace_members wm
+      where wm.workspace_id = tags.workspace_id
+        and wm.user_id = auth.uid()
+    )
+  );
+
+create policy "users can view drill tags in their workspaces"
+  on public.drill_tags
+  for select
+  using (
+    exists (
+      select 1
+      from public.drills d
+      join public.workspace_members wm
+        on wm.workspace_id = d.workspace_id
+      where d.id = drill_tags.drill_id
+        and wm.user_id = auth.uid()
+    )
+  );
+
+create policy "users can manage drill tags in their workspaces"
+  on public.drill_tags
+  for all
+  using (
+    exists (
+      select 1
+      from public.drills d
+      join public.workspace_members wm
+        on wm.workspace_id = d.workspace_id
+      where d.id = drill_tags.drill_id
+        and wm.user_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1
+      from public.drills d
+      join public.workspace_members wm
+        on wm.workspace_id = d.workspace_id
+      where d.id = drill_tags.drill_id
+        and wm.user_id = auth.uid()
+    )
+  );
+
+create policy "users can view diagrams in their workspaces"
+  on public.diagrams
+  for select
+  using (
+    exists (
+      select 1
+      from public.workspace_members wm
+      where wm.workspace_id = diagrams.workspace_id
+        and wm.user_id = auth.uid()
+    )
+  );
+
+create policy "users can manage diagrams in their workspaces"
+  on public.diagrams
+  for all
+  using (
+    exists (
+      select 1
+      from public.workspace_members wm
+      where wm.workspace_id = diagrams.workspace_id
+        and wm.user_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1
+      from public.workspace_members wm
+      where wm.workspace_id = diagrams.workspace_id
+        and wm.user_id = auth.uid()
+    )
+  );
