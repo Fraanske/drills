@@ -1,0 +1,128 @@
+Basketball Practice App — Online Setup Guide
+
+Overview
+You will build:
+- Live app on Vercel
+- Database + auth on Supabase
+- Multi-user workspace
+- Drawable diagram board
+
+
+STEP 1 — Create Supabase project
+1. Go to https://supabase.com
+2. Click New Project
+3. Fill in:
+   - Project name: basketball-app
+   - Database password (save it)
+4. Wait for setup
+
+
+STEP 2 — Create database tables
+1. Go to SQL Editor
+2. Run:
+
+-- Workspaces
+create table workspaces (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  created_at timestamp default now()
+);
+
+-- Members
+create table workspace_members (
+  id uuid primary key default gen_random_uuid(),
+  workspace_id uuid references workspaces(id),
+  user_id uuid,
+  role text default 'member'
+);
+
+-- Drills
+create table drills (
+  id uuid primary key default gen_random_uuid(),
+  workspace_id uuid references workspaces(id),
+  title text,
+  one_liner text,
+  explanation text,
+  setup text,
+  flow_steps text,
+  coaching_points text,
+  variations text,
+  players_needed text,
+  court_area text,
+  created_at timestamp default now()
+);
+
+-- Diagrams
+create table diagrams (
+  id uuid primary key default gen_random_uuid(),
+  drill_id uuid references drills(id),
+  workspace_id uuid references workspaces(id),
+  data_json jsonb,
+  created_at timestamp default now()
+);
+
+
+STEP 3 — Enable authentication
+- Go to Authentication → Providers
+- Enable Email login (magic link)
+
+
+STEP 4 — Get Supabase keys
+Go to Settings → API and copy:
+- Project URL
+- anon public key
+
+
+STEP 5 — Create GitHub repo
+- Go to https://github.com
+- Create new repo: basketball-practice-app
+
+
+STEP 6 — Upload scaffold
+- Unzip scaffold
+- Upload files to GitHub repo
+
+
+STEP 7 — Deploy on Vercel
+- Go to https://vercel.com
+- Import your repo
+- Deploy
+
+
+STEP 8 — Add environment variables
+In Vercel settings add:
+
+NEXT_PUBLIC_SUPABASE_URL=your_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+
+
+STEP 9 — Redeploy
+- Trigger redeploy in Vercel
+
+
+STEP 10 — Open your app
+Visit your Vercel URL
+
+
+What works
+- UI
+- Diagram board
+- Structure
+
+What still needs building
+- Supabase CRUD
+- Auth UI
+- Saving diagrams
+- Permissions
+
+
+Next steps
+1. Connect Supabase client
+2. Add login
+3. Save drills
+4. Save diagrams
+5. Load diagrams
+6. Add workspace filtering
+
+Advice
+Do not overbuild early. Get saving/loading working first.
