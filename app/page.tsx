@@ -14,23 +14,12 @@ export default async function HomePage() {
   let drills: DrillSummary[] = [];
 
   if (user) {
-    const { data: memberships } = await supabase
-      .from("workspace_members")
-      .select("workspace_id")
-      .eq("user_id", user.id)
-      .limit(1);
+    const { data } = await supabase
+      .from("drills")
+      .select("id, title, one_liner, court_area, players_needed, updated_at")
+      .order("updated_at", { ascending: false });
 
-    const workspaceId = memberships?.[0]?.workspace_id;
-
-    if (workspaceId) {
-      const { data } = await supabase
-        .from("drills")
-        .select("id, title, one_liner, court_area, players_needed, updated_at")
-        .eq("workspace_id", workspaceId)
-        .order("updated_at", { ascending: false });
-
-      drills = (data ?? []) as DrillSummary[];
-    }
+    drills = (data ?? []) as DrillSummary[];
   }
 
   const primaryDrill = drills[0] ?? null;
@@ -39,9 +28,9 @@ export default async function HomePage() {
     <main className="min-h-screen overflow-x-hidden">
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
         <div className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-[linear-gradient(135deg,rgba(7,58,103,0.96),rgba(12,108,181,0.95))] px-6 py-8 text-white shadow-[0_30px_80px_rgba(7,58,103,0.25)] sm:px-8 lg:px-10 lg:py-10">
-          <div className="absolute -right-12 top-8 h-40 w-40 rounded-full bg-[radial-gradient(circle,rgba(255,210,31,0.45),rgba(255,210,31,0))]" />
+          <div className="absolute -right-10 top-8 h-32 w-32 rounded-full bg-[radial-gradient(circle,rgba(255,210,31,0.45),rgba(255,210,31,0))]" />
           <div className="absolute left-[-4rem] top-[-5rem] h-48 w-48 rounded-full border border-white/10" />
-          <div className="relative grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+          <div className="relative grid gap-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.32em] text-[#ffd21f]">High Five inspired court workspace</p>
               <h1 className="mt-4 max-w-3xl text-4xl font-black tracking-tight text-white sm:text-5xl">
@@ -58,55 +47,57 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <div className="flex flex-col items-stretch gap-4 lg:items-end">
-              <div className="rounded-[1.75rem] border border-white/15 bg-white/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur">
+            <div className="flex flex-col items-stretch gap-5 lg:items-end">
+              <div className="self-center rounded-[1.5rem] border border-white/15 bg-white/10 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur lg:self-auto">
                 <Image
                   src="/high-five-logo.png"
                   alt="High Five Tilburg logo"
                   width={240}
                   height={240}
-                  className="mx-auto h-auto w-[180px] drop-shadow-[0_16px_30px_rgba(0,0,0,0.28)] sm:w-[210px]"
+                  className="mx-auto h-auto w-[140px] drop-shadow-[0_16px_30px_rgba(0,0,0,0.28)] sm:w-[164px]"
                   priority
                 />
               </div>
 
-              {user ? (
-                <div className="rounded-2xl border border-emerald-200/30 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-                  Signed in as <span className="font-semibold">{user.email}</span>
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-[#ffd21f]/30 bg-[#fff5bf] px-4 py-3 text-sm text-[#614a00]">
-                  Not signed in
-                </div>
-              )}
-
-              <div className="flex flex-wrap gap-3 lg:justify-end">
-                {primaryDrill ? (
-                  <Link href={`/drills/${primaryDrill.id}`} className="rounded-2xl bg-[#ffd21f] px-5 py-3 text-sm font-bold text-[#052b4b] shadow-[0_14px_30px_rgba(255,210,31,0.25)] transition hover:-translate-y-0.5 hover:bg-[#ffe065]">
-                    Open latest drill
-                  </Link>
-                ) : (
-                  <span className="rounded-2xl bg-white/20 px-5 py-3 text-sm font-medium text-white/78">
-                    No drill yet
-                  </span>
-                )}
+              <div className="w-full max-w-sm rounded-[1.6rem] border border-white/15 bg-white/8 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur lg:max-w-md">
                 {user ? (
-                  <form action={signOut}>
-                    <button type="submit" className="rounded-2xl border border-white/35 bg-white/6 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/12">
-                      Sign out
-                    </button>
-                  </form>
+                  <div className="rounded-2xl border border-emerald-200/30 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                    Signed in as <span className="font-semibold">{user.email}</span>
+                  </div>
                 ) : (
-                  <Link href="/sign-in" className="rounded-2xl border border-white/35 bg-white/6 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/12">
-                    Sign in page
-                  </Link>
+                  <div className="rounded-2xl border border-[#ffd21f]/30 bg-[#fff5bf] px-4 py-3 text-sm text-[#614a00]">
+                    Not signed in
+                  </div>
                 )}
+
+                <div className="mt-3 flex flex-wrap gap-3 lg:justify-end">
+                  {primaryDrill ? (
+                    <Link href={`/drills/${primaryDrill.id}`} className="rounded-2xl bg-[#ffd21f] px-5 py-3 text-sm font-bold text-[#052b4b] shadow-[0_14px_30px_rgba(255,210,31,0.25)] transition hover:-translate-y-0.5 hover:bg-[#ffe065]">
+                      Open latest drill
+                    </Link>
+                  ) : (
+                    <span className="rounded-2xl bg-white/20 px-5 py-3 text-sm font-medium text-white/78">
+                      No drill yet
+                    </span>
+                  )}
+                  {user ? (
+                    <form action={signOut}>
+                      <button type="submit" className="rounded-2xl border border-white/35 bg-white/6 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/12">
+                        Sign out
+                      </button>
+                    </form>
+                  ) : (
+                    <Link href="/sign-in" className="rounded-2xl border border-white/35 bg-white/6 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/12">
+                      Sign in page
+                    </Link>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-[360px,1fr]">
+        <div className="mt-10 grid gap-8 lg:grid-cols-[360px,1fr]">
           <aside className="space-y-6">
             <div className="rounded-[1.9rem] border border-white/80 bg-white/82 p-6 shadow-[0_22px_60px_rgba(7,58,103,0.08)] backdrop-blur">
               <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#0c6cb5]">Quick add</p>
@@ -126,7 +117,13 @@ export default async function HomePage() {
                 ) : drills.length === 0 ? (
                   <p className="text-sm text-slate-600">No drills found yet. Add your first drill in Supabase or the app later.</p>
                 ) : (
-                  <DrillList drills={drills} />
+                  <>
+                    <div className="mb-4 flex items-center justify-between rounded-2xl bg-[#f4fbff] px-4 py-3 text-sm">
+                      <span className="font-semibold text-[#073a67]">{drills.length} drill{drills.length === 1 ? "" : "s"} available</span>
+                      <span className="text-[#0c6cb5]">Latest update first</span>
+                    </div>
+                    <DrillList drills={drills} />
+                  </>
                 )}
               </div>
             </div>
