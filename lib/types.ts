@@ -7,6 +7,15 @@ export type DrillSummary = {
   updated_at: string;
 };
 
+export type DrillDetail = DrillSummary & {
+  explanation: string;
+  setup: string;
+  flow_steps: string;
+  coaching_points: string;
+  variations: string;
+  age_group: string | null;
+};
+
 export type DiagramObject =
   | { id: string; type: "player"; x: number; y: number; label: string }
   | { id: string; type: "arrow"; x1: number; y1: number; x2: number; y2: number }

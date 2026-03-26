@@ -4,30 +4,35 @@ import { DrillList } from "@/components/drill-list";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 import type { DrillSummary } from "@/lib/types";
 
-const starterDrills: DrillSummary[] = [
-  {
-    id: "sample-1",
-    title: "3-Man Weave",
-    one_liner: "transition passing | 6 players | full court",
-    court_area: "full_court",
-    players_needed: "6",
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "sample-2",
-    title: "Shell Drill",
-    one_liner: "half-court defense rotation | 8 players",
-    court_area: "half_court",
-    players_needed: "8",
-    updated_at: new Date().toISOString(),
-  },
-];
-
 export default async function HomePage() {
   const supabase = await getSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  let drills: DrillSummary[] = [];
+
+  if (user) {
+    const { data: memberships } = await supabase
+      .from("workspace_members")
+      .select("workspace_id")
+      .eq("user_id", user.id)
+      .limit(1);
+
+    const workspaceId = memberships?.[0]?.workspace_id;
+
+    if (workspaceId) {
+      const { data } = await supabase
+        .from("drills")
+        .select("id, title, one_liner, court_area, players_needed, updated_at")
+        .eq("workspace_id", workspaceId)
+        .order("updated_at", { ascending: false });
+
+      drills = (data ?? []) as DrillSummary[];
+    }
+  }
+
+  const primaryDrill = drills[0] ?? null;
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -53,9 +58,15 @@ export default async function HomePage() {
               )}
 
               <div className="flex gap-3">
-                <Link href="/drills/sample-1" className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white">
-                Open sample drill
-                </Link>
+                {primaryDrill ? (
+                  <Link href={`/drills/${primaryDrill.id}`} className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white">
+                    Open latest drill
+                  </Link>
+                ) : (
+                  <span className="rounded-2xl bg-slate-200 px-5 py-3 text-sm font-medium text-slate-500">
+                    No drill yet
+                  </span>
+                )}
                 {user ? (
                   <form action={signOut}>
                     <button type="submit" className="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-medium text-slate-800">
@@ -80,9 +91,15 @@ export default async function HomePage() {
               <p className="mt-3 text-sm text-slate-600">Parse and normalize this later with a server action or route handler.</p>
             </div>
             <div className="rounded-3xl bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-900">Sample library</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Drill library</h2>
               <div className="mt-4">
-                <DrillList drills={starterDrills} />
+                {!user ? (
+                  <p className="text-sm text-slate-600">Sign in to load your drills from Supabase.</p>
+                ) : drills.length === 0 ? (
+                  <p className="text-sm text-slate-600">No drills found yet. Add your first drill in Supabase or the app later.</p>
+                ) : (
+                  <DrillList drills={drills} />
+                )}
               </div>
             </div>
           </aside>

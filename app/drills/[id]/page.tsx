@@ -1,29 +1,45 @@
+import { notFound } from "next/navigation";
 import { DiagramEditor } from "@/components/diagram-editor";
-import type { DiagramPayload } from "@/lib/types";
-
-const starterDiagram: DiagramPayload = {
-  courtType: "full_court",
-  objects: [
-    { id: "p1", type: "player", x: 150, y: 360, label: "1" },
-    { id: "p2", type: "player", x: 390, y: 360, label: "2" },
-    { id: "p3", type: "player", x: 630, y: 360, label: "3" },
-    { id: "a1", type: "arrow", x1: 150, y1: 335, x2: 390, y2: 220 },
-    { id: "a2", type: "arrow", x1: 390, y1: 335, x2: 630, y2: 220 },
-    { id: "t1", type: "text", x: 330, y: 55, text: "Sample transition flow" }
-  ],
-};
+import { getSupabaseServerClient } from "@/lib/supabase-server";
+import type { DiagramPayload, DrillDetail } from "@/lib/types";
 
 export default async function DrillDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const supabase = await getSupabaseServerClient();
+
+  const { data: drill } = await supabase
+    .from("drills")
+    .select("id, title, one_liner, explanation, setup, flow_steps, coaching_points, variations, players_needed, court_area, age_group, updated_at")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!drill) {
+    notFound();
+  }
+
+  const { data: diagram } = await supabase
+    .from("diagrams")
+    .select("data_json")
+    .eq("drill_id", id)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const initialDiagram = ((diagram?.data_json as DiagramPayload | null) ?? {
+    courtType: "full_court",
+    objects: [],
+  }) as DiagramPayload;
+
+  const typedDrill = drill as DrillDetail;
 
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10">
       <div className="mx-auto max-w-7xl space-y-8">
         <header className="rounded-3xl bg-white p-8 shadow-sm">
           <p className="text-sm text-slate-500">Drill id: {id}</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">3-Man Weave</h1>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">{typedDrill.title}</h1>
           <p className="mt-3 max-w-3xl text-slate-600">
-            This page is the place to wire Supabase drill fetches, update forms, tag management, and saved diagrams.
+            {typedDrill.explanation || "This drill does not have an explanation yet."}
           </p>
         </header>
 
@@ -31,13 +47,18 @@ export default async function DrillDetailPage({ params }: { params: Promise<{ id
           <div className="rounded-3xl bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">Drill details</h2>
             <div className="mt-5 space-y-4">
-              <Field label="One-liner" value="transition passing | 6 players | full court" />
-              <Field label="Setup" value="Three lines on the baseline. Pass and follow after every pass." />
-              <Field label="Coaching points" value="Run wide lanes, pass early, and finish at game speed." />
+              <Field label="One-liner" value={typedDrill.one_liner} />
+              <Field label="Setup" value={typedDrill.setup} />
+              <Field label="Flow steps" value={typedDrill.flow_steps} />
+              <Field label="Coaching points" value={typedDrill.coaching_points} />
+              <Field label="Variations" value={typedDrill.variations} />
+              <Field label="Players needed" value={typedDrill.players_needed ?? "Not set"} />
+              <Field label="Court area" value={typedDrill.court_area.replace("_", " ")} />
+              <Field label="Age group" value={typedDrill.age_group ?? "Not set"} />
             </div>
           </div>
 
-          <DiagramEditor initialDiagram={starterDiagram} />
+          <DiagramEditor initialDiagram={initialDiagram} />
         </section>
       </div>
     </main>
