@@ -38,7 +38,7 @@ export default function HomePage() {
               <Link href="/drills/sample-1" className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white">
                 Open sample drill
               </Link>
-              <Link href="/(auth)/sign-in" className="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-medium text-slate-800">
+              <Link href="/sign-in" className="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-medium text-slate-800">
                 Sign in page
               </Link>
             </div>
