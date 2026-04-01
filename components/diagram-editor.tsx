@@ -84,6 +84,7 @@ export function DiagramEditor({
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragLastPoint, setDragLastPoint] = useState<Point | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   const activeSlide = useMemo(
     () => diagram.slides.find((slide) => slide.id === diagram.activeSlideId) ?? diagram.slides[0],
@@ -272,6 +273,23 @@ export function DiagramEditor({
     setActiveObjectId(null);
   }
 
+  function duplicateActiveSlide() {
+    if (!activeSlide) return;
+
+    const next: DiagramSlide = {
+      ...activeSlide,
+      id: uid(),
+      name: `${activeSlide.name} copy`,
+      objects: activeSlide.objects.map((item) => ({ ...item, id: uid() })),
+    };
+
+    setDiagram((current) => ({
+      activeSlideId: next.id,
+      slides: [...current.slides, next],
+    }));
+    setActiveObjectId(null);
+  }
+
   function deleteActiveSlide() {
     if (diagram.slides.length <= 1 || !activeSlide) return;
 
@@ -289,8 +307,38 @@ export function DiagramEditor({
     setActiveObjectId(null);
   }
 
+  function duplicateActiveObject() {
+    if (!activeObject) return;
+
+    const offset = 28;
+    let next: DiagramObject;
+
+    if (activeObject.type === "player") {
+      next = { ...activeObject, id: uid(), x: activeObject.x + offset, y: activeObject.y + offset };
+    } else if (activeObject.type === "cone" || activeObject.type === "ball" || activeObject.type === "text") {
+      next = { ...activeObject, id: uid(), x: activeObject.x + offset, y: activeObject.y + offset };
+    } else if (activeObject.type === "arrow") {
+      next = {
+        ...activeObject,
+        id: uid(),
+        x1: activeObject.x1 + offset,
+        y1: activeObject.y1 + offset,
+        x2: activeObject.x2 + offset,
+        y2: activeObject.y2 + offset,
+        cx: typeof activeObject.cx === "number" ? activeObject.cx + offset : activeObject.cx,
+        cy: typeof activeObject.cy === "number" ? activeObject.cy + offset : activeObject.cy,
+      };
+    } else {
+      next = activeObject;
+    }
+
+    setActiveSlideObjects((current) => [...current, next]);
+    setActiveObjectId(next.id);
+  }
+
   async function saveDiagram() {
     setIsSaving(true);
+    setSaveMessage(null);
 
     const response = await fetch("/api/diagrams", {
       method: "POST",
@@ -304,11 +352,11 @@ export function DiagramEditor({
     setIsSaving(false);
 
     if (!response.ok) {
-      window.alert("Save failed. Please try again.");
+      setSaveMessage("Save failed. Please try again.");
       return;
     }
 
-    window.alert("Diagram saved.");
+    setSaveMessage("Diagram saved.");
   }
 
   if (!activeSlide) return null;
@@ -365,11 +413,16 @@ export function DiagramEditor({
         <div className="mt-6 space-y-3 border-t border-slate-200 pt-4">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-slate-800">Slides</p>
-            {diagram.slides.length > 1 && (
-              <button type="button" onClick={deleteActiveSlide} className="text-xs font-semibold text-red-600">
-                Delete slide
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={duplicateActiveSlide} className="text-xs font-semibold text-slate-700">
+                Duplicate slide
               </button>
-            )}
+              {diagram.slides.length > 1 && (
+                <button type="button" onClick={deleteActiveSlide} className="text-xs font-semibold text-red-600">
+                  Delete slide
+                </button>
+              )}
+            </div>
           </div>
           <div className="space-y-2">
             {diagram.slides.map((slide, index) => (
@@ -427,15 +480,21 @@ export function DiagramEditor({
             <input value={activeObject.text} onChange={(event) => updateActiveLabel(event.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2" />
           )}
           {activeObject && (
-            <button type="button" onClick={deleteActiveObject} className="w-full rounded-xl border border-red-200 px-3 py-2 text-sm text-red-700">
-              Delete selected
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={duplicateActiveObject} className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700">
+                Duplicate
+              </button>
+              <button type="button" onClick={deleteActiveObject} className="rounded-xl border border-red-200 px-3 py-2 text-sm text-red-700">
+                Delete
+              </button>
+            </div>
           )}
         </div>
 
         <button type="button" disabled={isSaving} onClick={saveDiagram} className="mt-6 w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-medium text-white disabled:opacity-60">
           {isSaving ? "Saving..." : "Save drill diagram"}
         </button>
+        {saveMessage ? <p className="mt-3 text-sm text-slate-600">{saveMessage}</p> : null}
       </div>
 
       <div className="rounded-3xl border border-slate-200 bg-white p-4">
