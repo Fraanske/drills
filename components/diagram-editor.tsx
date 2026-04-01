@@ -738,7 +738,7 @@ export function DiagramEditor({
         </div>
       </div>
 
-      <div className="grid min-h-[720px] xl:grid-cols-[220px,minmax(0,1fr),340px]">
+      <div className="grid lg:min-h-[620px] lg:grid-cols-[170px,minmax(0,1fr),260px]">
         <aside className="border-r border-slate-200 bg-white">
           <div className="flex border-b border-slate-200">
             <button
@@ -758,7 +758,7 @@ export function DiagramEditor({
           </div>
 
           {panelTab === "phases" ? (
-            <div className="p-5">
+            <div className="p-3">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
                 Phase {diagram.slides.findIndex((slide) => slide.id === activeSlide.id) + 1}/{diagram.slides.length}
               </p>
@@ -767,7 +767,7 @@ export function DiagramEditor({
                 <button type="button" onClick={duplicateActiveSlide}>Clone</button>
                 {diagram.slides.length > 1 ? <button type="button" onClick={deleteActiveSlide}>Delete</button> : null}
               </div>
-              <div className="mt-5 space-y-3">
+              {diagram.slides.length > 1 ? <div className="mt-4 space-y-2">
                 {diagram.slides.map((slide, index) => (
                   <button
                     key={slide.id}
@@ -790,26 +790,30 @@ export function DiagramEditor({
                     </div>
                   </button>
                 ))}
-              </div>
+              </div> : (
+                <div className="mt-4 rounded-2xl bg-slate-50 p-3 text-xs text-slate-500">
+                  One slide active. Add or clone a phase when you need another step.
+                </div>
+              )}
             </div>
           ) : (
-            <div className="space-y-3 p-5 text-sm text-slate-700">
-              <div className="rounded-2xl bg-slate-50 p-4"><span className="font-semibold">Players:</span> {objectSummary.players}</div>
-              <div className="rounded-2xl bg-slate-50 p-4"><span className="font-semibold">Actions:</span> {objectSummary.arrows}</div>
-              <div className="rounded-2xl bg-slate-50 p-4"><span className="font-semibold">Cones:</span> {objectSummary.cones}</div>
-              <div className="rounded-2xl bg-slate-50 p-4"><span className="font-semibold">Balls:</span> {objectSummary.balls}</div>
-              <div className="rounded-2xl bg-slate-50 p-4"><span className="font-semibold">Notes:</span> {objectSummary.notes}</div>
+            <div className="space-y-2 p-3 text-xs text-slate-700">
+              <div className="rounded-2xl bg-slate-50 p-3"><span className="font-semibold">Players:</span> {objectSummary.players}</div>
+              <div className="rounded-2xl bg-slate-50 p-3"><span className="font-semibold">Actions:</span> {objectSummary.arrows}</div>
+              <div className="rounded-2xl bg-slate-50 p-3"><span className="font-semibold">Cones:</span> {objectSummary.cones}</div>
+              <div className="rounded-2xl bg-slate-50 p-3"><span className="font-semibold">Balls:</span> {objectSummary.balls}</div>
+              <div className="rounded-2xl bg-slate-50 p-3"><span className="font-semibold">Notes:</span> {objectSummary.notes}</div>
             </div>
           )}
         </aside>
 
-        <div className="bg-slate-100/70 p-6">
-          <div className="mx-auto max-w-[920px] rounded-[2rem] bg-[#eef1f5] p-6">
-            <div className="rounded-[1.8rem] bg-[var(--court-board-bg)] p-6 shadow-inner">
+        <div className="bg-slate-100/70 p-3">
+          <div className="mx-auto max-w-[820px] rounded-[1.5rem] bg-[#eef1f5] p-3">
+            <div className="rounded-[1.3rem] bg-[var(--court-board-bg)] p-3 shadow-inner">
               <svg
                 ref={svgRef}
                 viewBox={`0 0 ${boardWidth} ${boardHeight}`}
-                className="w-full rounded-[1.5rem] bg-[var(--court-board-bg)]"
+                className="w-full rounded-[1rem] bg-[var(--court-board-bg)]"
                 onMouseDown={onBoardMouseDown}
                 onMouseMove={onBoardMouseMove}
                 onMouseUp={onBoardMouseUp}
@@ -947,30 +951,30 @@ export function DiagramEditor({
           </div>
         </div>
 
-        <aside className="border-l border-slate-200 bg-white p-6">
-          <div className="space-y-8">
+        <aside className="border-l border-slate-200 bg-white p-3">
+          <div className="space-y-4">
             <section>
-              <p className="text-sm font-extrabold uppercase tracking-[0.08em] text-slate-800">Add Actions</p>
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <button type="button" onClick={() => { setTool("curvedArrow"); setActiveItemColor("yellow"); }} className="rounded-xl bg-slate-700 px-4 py-3 text-sm font-semibold text-white">Dribble</button>
-                <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("white"); }} className="rounded-xl bg-slate-700 px-4 py-3 text-sm font-semibold text-white">Pass</button>
-                <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("green"); }} className="rounded-xl bg-slate-700 px-4 py-3 text-sm font-semibold text-white">Cut</button>
-                <button type="button" onClick={() => { setTool("text"); setTextTemplate("SCREEN"); setActiveItemColor("blue"); }} className="rounded-xl bg-slate-700 px-4 py-3 text-sm font-semibold text-white">Screen</button>
-                <button type="button" onClick={() => { setTool("text"); setTextTemplate("SHOT"); setActiveItemColor("red"); }} className="rounded-xl bg-slate-700 px-4 py-3 text-sm font-semibold text-white">Shot</button>
-                <button type="button" onClick={() => { setTool("text"); setTextTemplate("HO"); setActiveItemColor("green"); }} className="rounded-xl bg-slate-700 px-4 py-3 text-sm font-semibold text-white">Handoff</button>
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-800">Add Actions</p>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => { setTool("curvedArrow"); setActiveItemColor("yellow"); }} className="rounded-lg bg-slate-700 px-2 py-2 text-xs font-semibold text-white">Dribble</button>
+                <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("white"); }} className="rounded-lg bg-slate-700 px-2 py-2 text-xs font-semibold text-white">Pass</button>
+                <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("green"); }} className="rounded-lg bg-slate-700 px-2 py-2 text-xs font-semibold text-white">Cut</button>
+                <button type="button" onClick={() => { setTool("text"); setTextTemplate("SCREEN"); setActiveItemColor("blue"); }} className="rounded-lg bg-slate-700 px-2 py-2 text-xs font-semibold text-white">Screen</button>
+                <button type="button" onClick={() => { setTool("text"); setTextTemplate("SHOT"); setActiveItemColor("red"); }} className="rounded-lg bg-slate-700 px-2 py-2 text-xs font-semibold text-white">Shot</button>
+                <button type="button" onClick={() => { setTool("text"); setTextTemplate("HO"); setActiveItemColor("green"); }} className="rounded-lg bg-slate-700 px-2 py-2 text-xs font-semibold text-white">Handoff</button>
               </div>
             </section>
 
             <section>
-              <p className="text-sm font-extrabold uppercase tracking-[0.08em] text-slate-800">Add Players</p>
-              <div className="mt-4 grid grid-cols-6 gap-3">
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-800">Add Players</p>
+              <div className="mt-2 grid grid-cols-6 gap-1.5">
                 {["1", "2", "3", "4", "5", "?"].map((label) => (
-                  <button key={label} type="button" onClick={() => placeLabeledPlayer(label, "white")} className="aspect-square rounded-full border-2 border-slate-500 text-sm font-bold text-slate-800">
+                  <button key={label} type="button" onClick={() => placeLabeledPlayer(label, "white")} className="aspect-square rounded-full border border-slate-500 text-[10px] font-bold text-slate-800">
                     {label}
                   </button>
                 ))}
                 {["X1", "X2", "X3", "X4", "X5", "X?"].map((label) => (
-                  <button key={label} type="button" onClick={() => placeLabeledPlayer(label, "blue")} className="rounded-xl border border-slate-300 bg-slate-50 px-2 py-3 text-sm font-semibold text-slate-700">
+                  <button key={label} type="button" onClick={() => placeLabeledPlayer(label, "blue")} className="rounded-md border border-slate-300 bg-slate-50 px-1 py-1.5 text-[10px] font-semibold text-slate-700">
                     {label}
                   </button>
                 ))}
@@ -978,28 +982,28 @@ export function DiagramEditor({
             </section>
 
             <section>
-              <p className="text-sm font-extrabold uppercase tracking-[0.08em] text-slate-800">Add Misc</p>
-              <div className="mt-4 grid grid-cols-4 gap-3">
-                <button type="button" onClick={() => placePresetObject("ball")} className="flex aspect-square items-center justify-center rounded-xl border border-slate-300 text-slate-700"><CircleDot size={18} /></button>
-                <button type="button" onClick={() => placePresetObject("cone")} className="flex aspect-square items-center justify-center rounded-xl border border-slate-300 text-slate-700"><Cone size={18} /></button>
-                <button type="button" onClick={() => { setTool("text"); setTextTemplate("Note"); }} className="flex aspect-square items-center justify-center rounded-xl border border-slate-300 text-slate-700"><StickyNote size={18} /></button>
-                <button type="button" onClick={() => setTool("select")} className="flex aspect-square items-center justify-center rounded-xl border border-slate-300 text-slate-700"><Users size={18} /></button>
-                <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("white"); }} className="flex aspect-square items-center justify-center rounded-xl border border-slate-300 text-slate-700"><MoveRight size={18} /></button>
-                <button type="button" onClick={() => { setTool("curvedArrow"); setActiveItemColor("yellow"); }} className="flex aspect-square items-center justify-center rounded-xl border border-slate-300 text-slate-700"><Spline size={18} /></button>
-                <button type="button" onClick={() => setTool("player")} className="flex aspect-square items-center justify-center rounded-xl border border-slate-300 text-slate-700"><PenLine size={18} /></button>
-                <button type="button" onClick={() => setPanelTab("objects")} className="flex aspect-square items-center justify-center rounded-xl border border-slate-300 text-slate-700"><ClipboardList size={18} /></button>
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-800">Add Misc</p>
+              <div className="mt-2 grid grid-cols-4 gap-1.5">
+                <button type="button" onClick={() => placePresetObject("ball")} className="flex h-11 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><CircleDot size={14} /></button>
+                <button type="button" onClick={() => placePresetObject("cone")} className="flex h-11 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Cone size={14} /></button>
+                <button type="button" onClick={() => { setTool("text"); setTextTemplate("Note"); }} className="flex h-11 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><StickyNote size={14} /></button>
+                <button type="button" onClick={() => setTool("select")} className="flex h-11 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Users size={14} /></button>
+                <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("white"); }} className="flex h-11 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><MoveRight size={14} /></button>
+                <button type="button" onClick={() => { setTool("curvedArrow"); setActiveItemColor("yellow"); }} className="flex h-11 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Spline size={14} /></button>
+                <button type="button" onClick={() => setTool("player")} className="flex h-11 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><PenLine size={14} /></button>
+                <button type="button" onClick={() => setPanelTab("objects")} className="flex h-11 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><ClipboardList size={14} /></button>
               </div>
             </section>
 
             <section>
-              <p className="text-sm font-extrabold uppercase tracking-[0.08em] text-slate-800">Selected Item</p>
-              <div className="mt-4 space-y-3 rounded-2xl bg-slate-50 p-4">
-                {!activeObject ? <p className="text-sm text-slate-500">Select an item on the board.</p> : null}
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-800">Selected Item</p>
+              <div className="mt-2 space-y-2 rounded-2xl bg-slate-50 p-3">
+                {!activeObject ? <p className="text-xs text-slate-500">Select an item on the board.</p> : null}
                 {activeObject?.type === "player" ? (
-                  <input value={activeObject.label} onChange={(event) => updateActiveLabel(event.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+                  <input value={activeObject.label} onChange={(event) => updateActiveLabel(event.target.value)} className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs" />
                 ) : null}
                 {activeObject?.type === "text" ? (
-                  <input value={activeObject.text} onChange={(event) => updateActiveLabel(event.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+                  <input value={activeObject.text} onChange={(event) => updateActiveLabel(event.target.value)} className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs" />
                 ) : null}
                 <div className="flex flex-wrap gap-2">
                   {diagramColors.map((color) => {
@@ -1020,11 +1024,11 @@ export function DiagramEditor({
                 </div>
                 {activeObject ? (
                   <div className="grid grid-cols-2 gap-2">
-                    <button type="button" onClick={duplicateActiveObject} className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700">Clone</button>
-                    <button type="button" onClick={deleteActiveObject} className="rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-700">Delete</button>
+                    <button type="button" onClick={duplicateActiveObject} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs font-semibold text-slate-700">Clone</button>
+                    <button type="button" onClick={deleteActiveObject} className="rounded-lg border border-red-200 px-2 py-1.5 text-xs font-semibold text-red-700">Delete</button>
                   </div>
                 ) : null}
-                {saveMessage ? <p className="text-sm text-slate-500">{saveMessage}</p> : null}
+                {saveMessage ? <p className="text-xs text-slate-500">{saveMessage}</p> : null}
               </div>
             </section>
           </div>
