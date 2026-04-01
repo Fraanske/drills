@@ -14,6 +14,21 @@ type DraftArrow = Extract<DiagramObject, { type: "arrow" }>;
 
 const boardWidth = 780;
 const boardHeight = 410;
+const courtLayout = {
+  margin: 18,
+  lineWidth: 3,
+  hoopRadius: 10,
+  backboardWidth: 82,
+  backboardOffset: 22,
+  laneWidth: 126,
+  laneDepth: 112,
+  freeThrowRadius: 48,
+  restrictedRadius: 34,
+  centerRadiusOuter: 26,
+  centerRadiusInner: 9,
+  sidelineMarkInset: 16,
+  sidelineMarkLength: 22,
+} as const;
 const diagramColors: DiagramColor[] = ["blue", "red", "yellow", "green", "white"];
 const colorStyles: Record<DiagramColor, { fill: string; stroke: string; text: string }> = {
   blue: { fill: "#1d4ed8", stroke: "#dbeafe", text: "#ffffff" },
@@ -76,6 +91,132 @@ function createArrow(start: Point, end: Point, style: "straight" | "curved", col
   }
 
   return arrow;
+}
+
+function CourtDefs() {
+  return (
+    <defs>
+      <pattern id="court-wood-pattern" patternUnits="userSpaceOnUse" width="28" height="28">
+        <rect width="28" height="28" fill="var(--court-wood-base)" />
+        <path d="M3 2v10 M8 6v14 M14 1v9 M20 8v16 M25 3v11" stroke="var(--court-wood-line)" strokeWidth="1.4" strokeLinecap="round" opacity="0.75" />
+      </pattern>
+    </defs>
+  );
+}
+
+function BasketEnd({
+  centerX,
+  topY,
+  flip = false,
+}: {
+  centerX: number;
+  topY: number;
+  flip?: boolean;
+}) {
+  const direction = flip ? -1 : 1;
+  const laneLeft = centerX - courtLayout.laneWidth / 2;
+  const laneTop = flip ? topY - courtLayout.laneDepth : topY;
+  const laneBottom = flip ? topY : topY + courtLayout.laneDepth;
+  const hoopY = topY + direction * courtLayout.backboardOffset;
+  const boardY = topY + direction * courtLayout.backboardOffset * 0.55;
+  const arcSweep = flip ? 1 : 0;
+
+  return (
+    <g>
+      <rect
+        x={laneLeft}
+        y={laneTop}
+        width={courtLayout.laneWidth}
+        height={courtLayout.laneDepth}
+        fill="var(--court-paint-fill)"
+        stroke="var(--court-paint-line)"
+        strokeWidth={courtLayout.lineWidth}
+      />
+      <path
+        d={`M ${centerX - courtLayout.freeThrowRadius} ${laneBottom} A ${courtLayout.freeThrowRadius} ${courtLayout.freeThrowRadius} 0 0 ${arcSweep} ${centerX + courtLayout.freeThrowRadius} ${laneBottom}`}
+        fill="none"
+        stroke="var(--court-marking)"
+        strokeWidth="2"
+        strokeDasharray="7 6"
+      />
+      <line
+        x1={centerX - courtLayout.backboardWidth / 2}
+        y1={boardY}
+        x2={centerX + courtLayout.backboardWidth / 2}
+        y2={boardY}
+        stroke="var(--court-marking)"
+        strokeWidth={courtLayout.lineWidth}
+      />
+      <circle cx={centerX} cy={hoopY} r={courtLayout.hoopRadius} fill="none" stroke="var(--court-marking)" strokeWidth="2.5" />
+      <path
+        d={`M ${centerX - courtLayout.restrictedRadius} ${hoopY} A ${courtLayout.restrictedRadius} ${courtLayout.restrictedRadius} 0 0 ${arcSweep} ${centerX + courtLayout.restrictedRadius} ${hoopY}`}
+        fill="none"
+        stroke="var(--court-marking)"
+        strokeWidth="2.5"
+      />
+      {[-30, -15, 0, 15, 30].map((offset) => (
+        <line
+          key={offset}
+          x1={centerX - courtLayout.laneWidth / 2 + (offset < 0 ? 10 : courtLayout.laneWidth - 10)}
+          y1={topY + direction * (28 + Math.abs(offset) * 0.7)}
+          x2={centerX - courtLayout.laneWidth / 2 + (offset < 0 ? 20 : courtLayout.laneWidth - 20)}
+          y2={topY + direction * (28 + Math.abs(offset) * 0.7)}
+          stroke="var(--court-marking)"
+          strokeWidth="2"
+        />
+      ))}
+    </g>
+  );
+}
+
+function HalfCourtShape() {
+  const top = 18;
+  const bottom = boardHeight - 18;
+  const left = 18;
+  const right = boardWidth - 18;
+  const centerX = boardWidth / 2;
+  const baselineY = top + 18;
+  const threeCenterY = baselineY + 92;
+  const arcRadius = 188;
+
+  return (
+    <>
+      <rect x={left} y={top} width={right - left} height={bottom - top} fill="url(#court-wood-pattern)" stroke="var(--court-marking)" strokeWidth="2.5" />
+      <BasketEnd centerX={centerX} topY={baselineY} />
+      <path d={`M ${centerX - arcRadius} ${threeCenterY} A ${arcRadius} ${arcRadius} 0 0 1 ${centerX + arcRadius} ${threeCenterY}`} fill="none" stroke="var(--court-marking)" strokeWidth="2.5" />
+      <line x1={left} y1={baselineY + 2} x2={left + courtLayout.sidelineMarkLength} y2={baselineY + 2} stroke="var(--court-marking)" strokeWidth="2.5" />
+      <line x1={right - courtLayout.sidelineMarkLength} y1={baselineY + 2} x2={right} y2={baselineY + 2} stroke="var(--court-marking)" strokeWidth="2.5" />
+    </>
+  );
+}
+
+function FullCourtShape() {
+  const top = 12;
+  const bottom = boardHeight - 12;
+  const left = 18;
+  const right = boardWidth - 18;
+  const centerX = boardWidth / 2;
+  const centerY = boardHeight / 2;
+  const topBaseline = top + 14;
+  const bottomBaseline = bottom - 14;
+  const arcRadius = 178;
+
+  return (
+    <>
+      <rect x={left} y={top} width={right - left} height={bottom - top} fill="url(#court-wood-pattern)" stroke="var(--court-marking)" strokeWidth="2.5" />
+      <BasketEnd centerX={centerX} topY={topBaseline} />
+      <BasketEnd centerX={centerX} topY={bottomBaseline} flip />
+      <line x1={left} y1={centerY} x2={right} y2={centerY} stroke="var(--court-marking)" strokeWidth="2.5" />
+      <circle cx={centerX} cy={centerY} r={courtLayout.centerRadiusOuter} fill="var(--court-paint-fill)" stroke="var(--court-marking)" strokeWidth="2.5" />
+      <circle cx={centerX} cy={centerY} r={courtLayout.centerRadiusInner} fill="var(--court-board-bg)" stroke="var(--court-marking)" strokeWidth="2" />
+      <path d={`M ${centerX - arcRadius} ${topBaseline + 94} A ${arcRadius} ${arcRadius} 0 0 1 ${centerX + arcRadius} ${topBaseline + 94}`} fill="none" stroke="var(--court-marking)" strokeWidth="2.5" />
+      <path d={`M ${centerX - arcRadius} ${bottomBaseline - 94} A ${arcRadius} ${arcRadius} 0 0 0 ${centerX + arcRadius} ${bottomBaseline - 94}`} fill="none" stroke="var(--court-marking)" strokeWidth="2.5" />
+      <line x1={left} y1={topBaseline + 4} x2={left + courtLayout.sidelineMarkLength} y2={topBaseline + 4} stroke="var(--court-marking)" strokeWidth="2.5" />
+      <line x1={right - courtLayout.sidelineMarkLength} y1={topBaseline + 4} x2={right} y2={topBaseline + 4} stroke="var(--court-marking)" strokeWidth="2.5" />
+      <line x1={left} y1={bottomBaseline - 4} x2={left + courtLayout.sidelineMarkLength} y2={bottomBaseline - 4} stroke="var(--court-marking)" strokeWidth="2.5" />
+      <line x1={right - courtLayout.sidelineMarkLength} y1={bottomBaseline - 4} x2={right} y2={bottomBaseline - 4} stroke="var(--court-marking)" strokeWidth="2.5" />
+    </>
+  );
 }
 
 export function DiagramEditor({
@@ -623,28 +764,14 @@ export function DiagramEditor({
         <svg
           ref={svgRef}
           viewBox={`0 0 ${boardWidth} ${boardHeight}`}
-          className="w-full rounded-2xl bg-amber-50"
+          className="w-full rounded-2xl bg-[var(--court-board-bg)]"
           onMouseDown={onBoardMouseDown}
           onMouseMove={onBoardMouseMove}
           onMouseUp={onBoardMouseUp}
           onMouseLeave={onBoardMouseUp}
         >
-          {activeSlide.courtType === "full_court" ? (
-            <>
-              <rect x="20" y="20" width="740" height="370" rx="24" fill="#fef3c7" stroke="#fcd34d" strokeWidth="2" />
-              <line x1="390" y1="20" x2="390" y2="390" stroke="#fcd34d" strokeWidth="2" />
-              <circle cx="390" cy="205" r="52" fill="none" stroke="#fcd34d" strokeWidth="2" />
-              <rect x="20" y="115" width="110" height="180" fill="none" stroke="#fcd34d" strokeWidth="2" />
-              <rect x="650" y="115" width="110" height="180" fill="none" stroke="#fcd34d" strokeWidth="2" />
-            </>
-          ) : (
-            <>
-              <rect x="70" y="25" width="640" height="355" rx="24" fill="#fef3c7" stroke="#fcd34d" strokeWidth="2" />
-              <rect x="290" y="210" width="200" height="170" fill="none" stroke="#fcd34d" strokeWidth="2" />
-              <line x1="70" y1="210" x2="710" y2="210" stroke="#fcd34d" strokeWidth="2" />
-              <circle cx="390" cy="210" r="62" fill="none" stroke="#fcd34d" strokeWidth="2" />
-            </>
-          )}
+          <CourtDefs />
+          {activeSlide.courtType === "full_court" ? <FullCourtShape /> : <HalfCourtShape />}
 
           {activeSlide.objects.map((item) => {
             if (item.type === "player") {
