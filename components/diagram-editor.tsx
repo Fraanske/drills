@@ -805,23 +805,10 @@ export function DiagramEditor({
         </div>
       </div>
 
-      <div className="grid min-h-[820px] grid-cols-[190px,minmax(0,1fr),430px]">
+      <div className="grid min-h-[820px] grid-cols-[156px,minmax(0,1fr),456px]">
         <aside className="border-r border-slate-200 bg-white">
-          <div className="flex border-b border-slate-200">
-            <button
-              type="button"
-              onClick={() => setPanelTab("phases")}
-              className={`flex-1 px-4 py-4 text-base font-medium ${panelTab === "phases" ? "border-b-2 border-[#0c9d8d] text-slate-900" : "text-slate-500"}`}
-            >
-              Phases
-            </button>
-            <button
-              type="button"
-              onClick={() => setPanelTab("objects")}
-              className={`flex-1 px-4 py-4 text-base font-medium ${panelTab === "objects" ? "border-b-2 border-[#0c9d8d] text-slate-900" : "text-slate-500"}`}
-            >
-              Objects
-            </button>
+          <div className="border-b border-slate-200 px-4 py-4">
+            <p className="text-base font-medium text-slate-900">Phases</p>
           </div>
 
           {panelTab === "phases" ? (
@@ -829,11 +816,13 @@ export function DiagramEditor({
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
                 Phase {diagram.slides.findIndex((slide) => slide.id === activeSlide.id) + 1}/{diagram.slides.length}
               </p>
-              <div className="grid grid-cols-2 gap-2 text-[11px] font-semibold text-slate-700">
+              <div className="grid grid-cols-2 gap-2 text-[10px] font-semibold text-slate-700">
                 <button type="button" onClick={() => addSlide(activeSlide.courtType)} className="rounded-lg border border-slate-200 px-2 py-2 hover:bg-slate-50">Next</button>
                 <button type="button" onClick={duplicateActiveSlide} className="rounded-lg border border-slate-200 px-2 py-2 hover:bg-slate-50">Clone</button>
                 <button type="button" onClick={clearActiveSlide} className="rounded-lg border border-slate-200 px-2 py-2 hover:bg-slate-50">Empty</button>
-                <button type="button" onClick={() => setPanelTab("objects")} className="rounded-lg border border-slate-200 px-2 py-2 hover:bg-slate-50">More</button>
+                <button type="button" onClick={() => updateCourtType(activeSlide.courtType === "half_court" ? "full_court" : "half_court")} className="rounded-lg border border-slate-200 px-2 py-2 hover:bg-slate-50">
+                  {activeSlide.courtType === "half_court" ? "Full" : "Half"}
+                </button>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <button
@@ -862,14 +851,14 @@ export function DiagramEditor({
                     }}
                     className={`w-full rounded-xl border p-2 text-left transition ${slide.id === activeSlide.id ? "border-[#1d8fff] shadow-[inset_0_0_0_2px_#1d8fff]" : "border-slate-200 hover:border-slate-300"}`}
                   >
-                    <div className="rounded-lg bg-[#f4e3c4] p-1.5">
+                    <div className="rounded-lg bg-[#f4e3c4] p-1">
                       <svg viewBox={`0 0 ${boardWidth} ${boardHeight}`} className="w-full rounded-lg">
                         <CourtDefs />
                         {slide.courtType === "full_court" ? <FullCourtShape /> : <HalfCourtShape />}
                       </svg>
                     </div>
-                    <div className="mt-1 flex items-center justify-between px-1 text-[10px] font-semibold text-slate-700">
-                      <span>{slide.name || `Phase ${index + 1}`}</span>
+                    <div className="mt-1 flex items-center justify-between px-1 text-[9px] font-semibold text-slate-700">
+                      <span>{slide.name || `P${index + 1}`}</span>
                       <span className="text-slate-400">{slide.courtType === "full_court" ? "Full" : "Half"}</span>
                     </div>
                   </button>
