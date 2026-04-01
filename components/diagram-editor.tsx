@@ -755,8 +755,6 @@ export function DiagramEditor({
 
   return (
     <div className="overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white shadow-sm">
-      <div className="overflow-x-auto">
-        <div className="min-w-[1500px]">
       <div className="flex items-center gap-0 bg-[#109c92] px-0 py-0 text-white">
         <button
           type="button"
@@ -805,7 +803,7 @@ export function DiagramEditor({
         </div>
       </div>
 
-      <div className="grid min-h-[820px] grid-cols-[156px,minmax(0,1fr),456px]">
+      <div className="grid min-h-[820px] grid-cols-[132px,minmax(0,1fr),340px]">
         <aside className="border-r border-slate-200 bg-white">
           <div className="border-b border-slate-200 px-4 py-4">
             <p className="text-base font-medium text-slate-900">Phases</p>
@@ -884,10 +882,10 @@ export function DiagramEditor({
           )}
         </aside>
 
-        <div className="bg-[#eef2f7] px-10 py-8">
-          <div className="mx-auto flex h-full max-w-[980px] items-center justify-center">
-            <div className="w-full rounded-[1.75rem] bg-[#e8edf3] p-8">
-              <div className="rounded-[1.5rem] bg-[#f0d5a9] p-6 shadow-inner">
+        <div className="bg-[#eef2f7] px-6 py-6">
+          <div className="mx-auto flex h-full max-w-[860px] items-center justify-center">
+            <div className="w-full rounded-[1.5rem] bg-[#e8edf3] p-5">
+              <div className="rounded-[1.25rem] bg-[#f0d5a9] p-4 shadow-inner">
               <svg
                 ref={svgRef}
                 viewBox={`0 0 ${boardWidth} ${boardHeight}`}
@@ -1161,8 +1159,6 @@ export function DiagramEditor({
             </section>
           </div>
         </aside>
-      </div>
-        </div>
       </div>
     </div>
   );
