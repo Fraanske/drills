@@ -78,6 +78,8 @@ export function DiagramEditor({
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [tool, setTool] = useState<Tool>("player");
   const [diagram, setDiagram] = useState<DiagramPayload>(initialDiagram);
+  const [history, setHistory] = useState<DiagramPayload[]>([]);
+  const [future, setFuture] = useState<DiagramPayload[]>([]);
   const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
   const [activePlayerColor, setActivePlayerColor] = useState<PlayerColor>("blue");
   const [draftArrow, setDraftArrow] = useState<DraftArrow | null>(null);
@@ -96,10 +98,19 @@ export function DiagramEditor({
     [activeObjectId, activeSlide],
   );
 
+  function commitDiagram(update: (current: DiagramPayload) => DiagramPayload) {
+    setDiagram((current) => {
+      const next = update(current);
+      setHistory((previous) => [...previous, current]);
+      setFuture([]);
+      return next;
+    });
+  }
+
   function setActiveSlideObjects(update: (current: DiagramObject[]) => DiagramObject[]) {
     if (!activeSlide) return;
 
-    setDiagram((current) => ({
+    commitDiagram((current) => ({
       ...current,
       slides: current.slides.map((slide) =>
         slide.id === activeSlide.id ? { ...slide, objects: update(slide.objects) } : slide,
@@ -250,7 +261,7 @@ export function DiagramEditor({
 
   function updateSlideName(value: string) {
     if (!activeSlide) return;
-    setDiagram((current) => ({
+    commitDiagram((current) => ({
       ...current,
       slides: current.slides.map((slide) => (slide.id === activeSlide.id ? { ...slide, name: value } : slide)),
     }));
@@ -258,7 +269,7 @@ export function DiagramEditor({
 
   function updateCourtType(courtType: DiagramSlide["courtType"]) {
     if (!activeSlide) return;
-    setDiagram((current) => ({
+    commitDiagram((current) => ({
       ...current,
       slides: current.slides.map((slide) => (slide.id === activeSlide.id ? { ...slide, courtType } : slide)),
     }));
@@ -266,7 +277,7 @@ export function DiagramEditor({
 
   function addSlide(courtType: DiagramSlide["courtType"]) {
     const next = createEmptySlide(courtType, `Slide ${diagram.slides.length + 1}`);
-    setDiagram((current) => ({
+    commitDiagram((current) => ({
       activeSlideId: next.id,
       slides: [...current.slides, next],
     }));
@@ -283,7 +294,7 @@ export function DiagramEditor({
       objects: activeSlide.objects.map((item) => ({ ...item, id: uid() })),
     };
 
-    setDiagram((current) => ({
+    commitDiagram((current) => ({
       activeSlideId: next.id,
       slides: [...current.slides, next],
     }));
@@ -294,10 +305,10 @@ export function DiagramEditor({
     if (diagram.slides.length <= 1 || !activeSlide) return;
 
     const remaining = diagram.slides.filter((slide) => slide.id !== activeSlide.id);
-    setDiagram({
+    commitDiagram(() => ({
       activeSlideId: remaining[0].id,
       slides: remaining,
-    });
+    }));
     setActiveObjectId(null);
   }
 
@@ -334,6 +345,24 @@ export function DiagramEditor({
 
     setActiveSlideObjects((current) => [...current, next]);
     setActiveObjectId(next.id);
+  }
+
+  function undo() {
+    if (history.length === 0) return;
+    const previous = history[history.length - 1];
+    setHistory((current) => current.slice(0, -1));
+    setFuture((current) => [diagram, ...current]);
+    setDiagram(previous);
+    setActiveObjectId(null);
+  }
+
+  function redo() {
+    if (future.length === 0) return;
+    const [next, ...rest] = future;
+    setHistory((current) => [...current, diagram]);
+    setFuture(rest);
+    setDiagram(next);
+    setActiveObjectId(null);
   }
 
   async function saveDiagram() {
@@ -407,6 +436,20 @@ export function DiagramEditor({
                 />
               );
             })}
+          </div>
+        </div>
+
+        <div className="mt-6 space-y-3 border-t border-slate-200 pt-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-slate-800">History</p>
+            <div className="flex gap-2">
+              <button type="button" onClick={undo} disabled={history.length === 0} className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 disabled:opacity-40">
+                Undo
+              </button>
+              <button type="button" onClick={redo} disabled={future.length === 0} className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 disabled:opacity-40">
+                Redo
+              </button>
+            </div>
           </div>
         </div>
 
