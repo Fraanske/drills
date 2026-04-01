@@ -35,116 +35,84 @@ export default async function DrillDetailPage({ params }: { params: Promise<{ id
   const updateDrillAction = updateDrill.bind(null, id);
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10">
-      <div className="mx-auto max-w-7xl space-y-8">
-        <header className="rounded-3xl bg-white p-8 shadow-sm">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
-          >
-            <span aria-hidden="true">←</span>
-            Back to drill library
-          </Link>
-          <form action={updateDrillAction} className="mt-5 grid gap-5 lg:grid-cols-[1fr_220px] lg:items-start">
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="title" className="text-sm font-medium text-slate-700">
-                  Drill title
-                </label>
-                <input
-                  id="title"
-                  name="title"
-                  defaultValue={typedDrill.title}
-                  placeholder="New drill"
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-3xl font-semibold tracking-tight text-slate-900 outline-none transition focus:border-sky-400 focus:bg-white"
-                />
-              </div>
-              <div>
-                <label htmlFor="one_liner" className="text-sm font-medium text-slate-700">
-                  One-liner
-                </label>
-                <input
-                  id="one_liner"
-                  name="one_liner"
-                  defaultValue={typedDrill.one_liner}
-                  placeholder="transition passing | 6 players | full court"
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-base text-slate-700 outline-none transition focus:border-sky-400 focus:bg-white"
-                />
-              </div>
-              <div>
-                <label htmlFor="explanation" className="text-sm font-medium text-slate-700">
-                  Explanation
-                </label>
-                <textarea
-                  id="explanation"
-                  name="explanation"
-                  defaultValue={typedDrill.explanation}
-                  rows={4}
-                  placeholder="Describe the purpose and key outcome of the drill."
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-base leading-7 text-slate-700 outline-none transition focus:border-sky-400 focus:bg-white"
-                />
-              </div>
-              <p className="text-sm text-slate-500">Drill id: {id}</p>
-            </div>
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-sm font-medium text-slate-700">Quick actions</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Save the title and summary here, or update the full drill details in the panel below.
-              </p>
+    <main className="min-h-screen bg-slate-50 px-3 py-4 lg:px-4">
+      <div className="mx-auto max-w-[1680px] space-y-4">
+        <form action={updateDrillAction} className="rounded-3xl bg-white p-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
+            >
+              <span aria-hidden="true">←</span>
+              Back to drill library
+            </Link>
+            <div className="flex items-center gap-2">
+              <span className="hidden text-xs text-slate-400 lg:inline">Drill id: {id}</span>
               <button
                 type="submit"
-                className="mt-4 w-full rounded-2xl bg-sky-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-sky-700"
+                className="rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700"
               >
-                Save drill content
+                Save drill
               </button>
             </div>
-          </form>
-        </header>
-
-        <section className="grid gap-8 lg:grid-cols-[420px,1fr]">
-          <div className="rounded-3xl bg-white p-6 shadow-sm">
-            <form action={updateDrillAction}>
-              <div className="flex items-center justify-between gap-4">
-                <h2 className="text-lg font-semibold text-slate-900">Drill details</h2>
-                <button
-                  type="submit"
-                  className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
-                >
-                  Save details
-                </button>
-              </div>
-              <div className="mt-5 space-y-4">
-                <InputField label="Title" name="title" defaultValue={typedDrill.title} />
-                <InputField label="One-liner" name="one_liner" defaultValue={typedDrill.one_liner} />
-                <TextAreaField label="Setup" name="setup" defaultValue={typedDrill.setup} rows={4} />
-                <TextAreaField label="Flow steps" name="flow_steps" defaultValue={typedDrill.flow_steps} rows={4} />
-                <TextAreaField label="Coaching points" name="coaching_points" defaultValue={typedDrill.coaching_points} rows={4} />
-                <TextAreaField label="Variations" name="variations" defaultValue={typedDrill.variations} rows={4} />
-                <InputField label="Players needed" name="players_needed" defaultValue={typedDrill.players_needed ?? ""} placeholder="6" />
-                <SelectField label="Court area" name="court_area" defaultValue={typedDrill.court_area}>
-                  <option value="half_court">Half court</option>
-                  <option value="full_court">Full court</option>
-                  <option value="small_side">Small side</option>
-                </SelectField>
-                <InputField label="Age group" name="age_group" defaultValue={typedDrill.age_group ?? ""} placeholder="U14+" />
-                <TextAreaField
-                  label="Explanation"
-                  name="explanation"
-                  defaultValue={typedDrill.explanation}
-                  rows={5}
-                />
-              </div>
-            </form>
           </div>
 
-          <DiagramEditor initialDiagram={initialDiagram} drillId={id} />
-        </section>
+          <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.4fr),minmax(0,1fr),160px,160px]">
+            <InlineField label="Title" name="title" defaultValue={typedDrill.title} placeholder="New drill" />
+            <InlineField
+              label="One-liner"
+              name="one_liner"
+              defaultValue={typedDrill.one_liner}
+              placeholder="transition passing | 6 players | full court"
+            />
+            <InlineField
+              label="Players"
+              name="players_needed"
+              defaultValue={typedDrill.players_needed ?? ""}
+              placeholder="6"
+            />
+            <InlineField
+              label="Age"
+              name="age_group"
+              defaultValue={typedDrill.age_group ?? ""}
+              placeholder="U14+"
+            />
+          </div>
+
+          <div className="mt-3 grid gap-3 xl:grid-cols-[220px,1fr]">
+            <CompactSelectField label="Court" name="court_area" defaultValue={typedDrill.court_area}>
+              <option value="half_court">Half court</option>
+              <option value="full_court">Full court</option>
+              <option value="small_side">Small side</option>
+            </CompactSelectField>
+            <InlineField
+              label="Summary"
+              name="explanation"
+              defaultValue={typedDrill.explanation}
+              placeholder="Short explanation of the drill"
+            />
+          </div>
+
+          <details className="mt-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+            <summary className="cursor-pointer list-none text-sm font-semibold text-slate-700">
+              More drill details
+            </summary>
+            <div className="mt-4 grid gap-3 xl:grid-cols-2">
+              <TextAreaField label="Setup" name="setup" defaultValue={typedDrill.setup} rows={3} />
+              <TextAreaField label="Flow steps" name="flow_steps" defaultValue={typedDrill.flow_steps} rows={3} />
+              <TextAreaField label="Coaching points" name="coaching_points" defaultValue={typedDrill.coaching_points} rows={3} />
+              <TextAreaField label="Variations" name="variations" defaultValue={typedDrill.variations} rows={3} />
+            </div>
+          </details>
+        </form>
+
+        <DiagramEditor initialDiagram={initialDiagram} drillId={id} />
       </div>
     </main>
   );
 }
 
-function InputField({
+function InlineField({
   label,
   name,
   defaultValue,
@@ -157,7 +125,7 @@ function InputField({
 }) {
   return (
     <div>
-      <label htmlFor={name} className="text-sm font-medium text-slate-700">
+      <label htmlFor={name} className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
         {label}
       </label>
       <input
@@ -165,7 +133,7 @@ function InputField({
         name={name}
         defaultValue={defaultValue}
         placeholder={placeholder}
-        className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-sky-400 focus:bg-white"
+        className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-sky-400 focus:bg-white"
       />
     </div>
   );
@@ -184,7 +152,7 @@ function TextAreaField({
 }) {
   return (
     <div>
-      <label htmlFor={name} className="text-sm font-medium text-slate-700">
+      <label htmlFor={name} className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
         {label}
       </label>
       <textarea
@@ -192,13 +160,13 @@ function TextAreaField({
         name={name}
         defaultValue={defaultValue}
         rows={rows}
-        className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700 outline-none transition focus:border-sky-400 focus:bg-white"
+        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm leading-6 text-slate-700 outline-none transition focus:border-sky-400 focus:bg-white"
       />
     </div>
   );
 }
 
-function SelectField({
+function CompactSelectField({
   label,
   name,
   defaultValue,
@@ -211,14 +179,14 @@ function SelectField({
 }) {
   return (
     <div>
-      <label htmlFor={name} className="text-sm font-medium text-slate-700">
+      <label htmlFor={name} className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
         {label}
       </label>
       <select
         id={name}
         name={name}
         defaultValue={defaultValue}
-        className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-sky-400 focus:bg-white"
+        className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-sky-400 focus:bg-white"
       >
         {children}
       </select>
