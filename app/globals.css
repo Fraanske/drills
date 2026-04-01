@@ -9,12 +9,12 @@
   --hf-gold: #ffd21f;
   --hf-cream: #fffdf4;
   --hf-ink: #0e2340;
-  --court-wood-base: #e9c78f;
-  --court-wood-line: #d8b175;
-  --court-paint-fill: #efb24b;
-  --court-paint-line: #2a241d;
-  --court-marking: #2a241d;
-  --court-board-bg: #f3ddba;
+  --court-wood-base: #eac992;
+  --court-wood-line: #d7b57b;
+  --court-paint-fill: rgba(255, 255, 255, 0.06);
+  --court-paint-line: #ffffff;
+  --court-marking: #ffffff;
+  --court-board-bg: #efcf9f;
 }
 
 html,
