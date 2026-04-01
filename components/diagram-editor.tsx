@@ -1041,67 +1041,75 @@ export function DiagramEditor({
           <div className="space-y-8">
             <section>
               <div className="flex items-center gap-2">
-                <p className="text-[13px] font-extrabold uppercase tracking-[0.1em] text-slate-800">Add Actions</p>
+                <p className="text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-800">Add Actions</p>
                 <HelpCircle size={16} className="text-slate-400" />
               </div>
               <div className="mt-4 grid grid-cols-3 gap-3">
-                <button type="button" onClick={() => { setTool("curvedArrow"); setActiveItemColor("yellow"); }} className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-semibold text-white">Dribble</button>
-                <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("white"); }} className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-semibold text-white">Pass</button>
-                <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("green"); }} className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-semibold text-white">Cut</button>
-                <button type="button" onClick={() => { setTool("text"); setTextTemplate("SCREEN"); setActiveItemColor("blue"); }} className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-semibold text-white">Screen</button>
-                <button type="button" onClick={() => { setTool("text"); setTextTemplate("SHOT"); setActiveItemColor("red"); }} className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-semibold text-white">Shot</button>
-                <button type="button" onClick={() => { setTool("text"); setTextTemplate("HO"); setActiveItemColor("green"); }} className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-semibold text-white">Handoff</button>
+                <button type="button" onClick={() => { setTool("curvedArrow"); setActiveItemColor("yellow"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Dribble</button>
+                <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("white"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Pass</button>
+                <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("green"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Cut</button>
+                <button type="button" onClick={() => { setTool("text"); setTextTemplate("SCREEN"); setActiveItemColor("blue"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Screen</button>
+                <button type="button" onClick={() => { setTool("text"); setTextTemplate("SHOT"); setActiveItemColor("red"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Shot</button>
+                <button type="button" onClick={() => { setTool("text"); setTextTemplate("HO"); setActiveItemColor("green"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Handoff</button>
               </div>
             </section>
 
             <section>
               <div className="flex items-center gap-2">
-                <p className="text-[13px] font-extrabold uppercase tracking-[0.1em] text-slate-800">Add Players</p>
+                <p className="text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-800">Add Players</p>
                 <HelpCircle size={16} className="text-slate-400" />
               </div>
-              <div className="mt-4 grid grid-cols-6 gap-3">
-                {["1", "2", "3", "4", "5", "?"].map((label) => (
-                  <button key={label} type="button" onClick={() => placeLabeledPlayer(label, "white")} className="aspect-square rounded-full border-2 border-slate-500 text-xl font-bold text-slate-800">
-                    {label}
-                  </button>
-                ))}
-                {["1", "2", "3", "4", "5", "?"].map((label) => (
-                  <button key={`off-${label}`} type="button" onClick={() => placeLabeledPlayer(label, "red")} className="rounded-lg border border-slate-300 bg-white px-2 py-3 text-sm font-semibold text-slate-700">
-                    {label}
-                  </button>
-                ))}
-                {["X1", "X2", "X3", "X4", "X5", "X?"].map((label) => (
-                  <button key={label} type="button" onClick={() => placeLabeledPlayer(label, "blue")} className="rounded-lg border border-slate-300 bg-white px-2 py-3 text-sm font-semibold text-slate-700">
-                    {label}
-                  </button>
-                ))}
-                {["1•", "2•", "3•", "4•", "5•", "?•"].map((label) => (
-                  <button key={`ball-${label}`} type="button" onClick={() => placeLabeledPlayer(label, "green")} className="rounded-lg border border-slate-300 bg-white px-2 py-3 text-sm font-semibold text-slate-700">
-                    {label}
-                  </button>
-                ))}
+              <div className="mt-4 space-y-3">
+                <div className="grid grid-cols-6 gap-3">
+                  {["1", "2", "3", "4", "5", "?"].map((label) => (
+                    <button key={label} type="button" onClick={() => placeLabeledPlayer(label, "white")} className="aspect-square rounded-full border-2 border-slate-500 bg-white text-xl font-bold text-slate-800">
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-6 gap-3">
+                  {["1", "2", "3", "4", "5", "?"].map((label) => (
+                    <button key={`plain-${label}`} type="button" onClick={() => placeLabeledPlayer(label, "white")} className="rounded-lg border border-slate-300 bg-white px-2 py-3 text-sm font-semibold text-slate-700">
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-6 gap-3">
+                  {["X1", "X2", "X3", "X4", "X5", "X?"].map((label) => (
+                    <button key={label} type="button" onClick={() => placeLabeledPlayer(label, "blue")} className="rounded-lg border border-slate-300 bg-white px-2 py-3 text-sm font-semibold text-slate-700">
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-6 gap-3">
+                  {["1", "2", "3", "4", "5", "?"].map((label) => (
+                    <button key={`ballrow-${label}`} type="button" onClick={() => placeLabeledPlayer(label, "white")} className="rounded-lg border border-slate-300 bg-white px-2 py-3 text-sm font-semibold text-slate-700">
+                      {label}•
+                    </button>
+                  ))}
+                </div>
               </div>
             </section>
 
             <section>
               <div className="flex items-center gap-2">
-                <p className="text-[13px] font-extrabold uppercase tracking-[0.1em] text-slate-800">Add Misc</p>
+                <p className="text-[13px] font-extrabold uppercase tracking-[0.08em] text-slate-800">Add Misc</p>
                 <HelpCircle size={16} className="text-slate-400" />
               </div>
               <div className="mt-4 grid grid-cols-7 gap-3">
-                <button type="button" onClick={() => placePresetObject("ball")} className="flex h-12 items-center justify-center rounded-xl border border-slate-300 text-slate-700"><CircleDot size={18} /></button>
-                <button type="button" onClick={() => placePresetObject("cone")} className="flex h-12 items-center justify-center rounded-xl border border-slate-300 text-slate-700"><Cone size={18} /></button>
-                <button type="button" onClick={() => { setTool("text"); setTextTemplate("T"); }} className="flex h-12 items-center justify-center rounded-xl border border-slate-300 text-slate-700"><PenLine size={18} /></button>
-                <button type="button" className="flex h-12 items-center justify-center rounded-xl border border-slate-300 text-slate-700"><RectangleHorizontal size={18} /></button>
-                <button type="button" className="flex h-12 items-center justify-center rounded-xl border border-slate-300 text-slate-700"><Circle size={18} /></button>
-                <button type="button" className="flex h-12 items-center justify-center rounded-xl border border-slate-300 text-slate-700"><Triangle size={18} /></button>
-                <button type="button" className="flex h-12 items-center justify-center rounded-xl border border-slate-300 text-slate-700"><Diamond size={18} /></button>
-                <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("white"); }} className="flex h-12 items-center justify-center rounded-xl border border-slate-300 text-slate-700"><MoveRight size={18} /></button>
-                <button type="button" onClick={() => { setTool("curvedArrow"); setActiveItemColor("yellow"); }} className="flex h-12 items-center justify-center rounded-xl border border-slate-300 text-slate-700"><Spline size={18} /></button>
-                <button type="button" onClick={() => { setTool("text"); setTextTemplate("Note"); }} className="flex h-12 items-center justify-center rounded-xl border border-slate-300 text-slate-700"><StickyNote size={18} /></button>
-                <button type="button" onClick={() => setTool("select")} className="flex h-12 items-center justify-center rounded-xl border border-slate-300 text-slate-700"><Users size={18} /></button>
-                <button type="button" className="flex h-12 items-center justify-center rounded-xl border border-slate-300 text-slate-700"><Square size={18} /></button>
-                <button type="button" className="flex h-12 items-center justify-center rounded-xl border border-slate-300 text-slate-700"><ImageIcon size={18} /></button>
+                <button type="button" onClick={() => placePresetObject("ball")} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><CircleDot size={18} /></button>
+                <button type="button" onClick={() => placePresetObject("cone")} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Cone size={18} /></button>
+                <button type="button" onClick={() => { setTool("text"); setTextTemplate("T"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><PenLine size={18} /></button>
+                <button type="button" className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><RectangleHorizontal size={18} /></button>
+                <button type="button" className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Circle size={18} /></button>
+                <button type="button" className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Triangle size={18} /></button>
+                <button type="button" className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Diamond size={18} /></button>
+                <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("white"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><MoveRight size={18} /></button>
+                <button type="button" onClick={() => { setTool("curvedArrow"); setActiveItemColor("yellow"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Spline size={18} /></button>
+                <button type="button" onClick={() => { setTool("text"); setTextTemplate("Note"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><StickyNote size={18} /></button>
+                <button type="button" onClick={() => setTool("select")} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Users size={18} /></button>
+                <button type="button" className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Square size={18} /></button>
+                <button type="button" className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><ImageIcon size={18} /></button>
               </div>
             </section>
 
