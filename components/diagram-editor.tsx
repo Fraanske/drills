@@ -254,8 +254,8 @@ function ToolButton({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition ${
-        active ? "bg-white text-[#0c9d8d]" : "bg-white/12 text-white hover:bg-white/18"
+      className={`inline-flex min-w-[68px] flex-col items-center justify-center gap-1 rounded-none px-4 py-3 text-sm font-semibold transition ${
+        active ? "bg-[#cbefff] text-[#0f3566]" : "bg-transparent text-white hover:bg-white/10"
       }`}
     >
       {icon}
@@ -757,30 +757,30 @@ export function DiagramEditor({
     <div className="overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
         <div className="min-w-[1500px]">
-      <div className="flex items-center gap-4 bg-[#109c92] px-5 py-4 text-white">
+      <div className="flex items-center gap-0 bg-[#109c92] px-0 py-0 text-white">
         <button
           type="button"
           onClick={() => window.history.back()}
-          className="inline-flex items-center gap-2 rounded-xl border border-white/25 px-4 py-2 text-sm font-semibold hover:bg-white/10"
+          className="ml-5 inline-flex items-center gap-2 rounded-xl border border-white/25 px-4 py-2 text-sm font-semibold hover:bg-white/10"
         >
           <X size={16} />
           Close
         </button>
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="ml-6 hidden items-stretch gap-0 md:flex">
           <ToolButton active label="Draw" onClick={() => setPanelTab("phases")} icon={<PenLine size={15} />} />
           <ToolButton active={false} label="Animate" onClick={() => {}} icon={<Play size={15} />} />
           <ToolButton active={false} label="Notes" onClick={() => {}} icon={<StickyNote size={15} />} />
           <ToolButton active={false} label="Output" onClick={() => {}} icon={<ClipboardList size={15} />} />
         </div>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 px-6">
           <input
             value={activeSlide.name}
             onChange={(event) => updateSlideName(event.target.value)}
-            className="w-full rounded-xl bg-white/12 px-4 py-2 text-center text-[1.8rem] font-bold text-white outline-none placeholder:text-white/60"
+            className="w-full rounded-none bg-white/10 px-4 py-3 text-center text-[1.7rem] font-bold text-white outline-none placeholder:text-white/60"
             placeholder="Untitled Play"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="mr-5 flex items-center gap-3">
           <button type="button" onClick={undo} disabled={history.length === 0} className="rounded-xl border border-white/25 p-2 disabled:opacity-40">
             <Undo2 size={18} />
           </button>
@@ -811,14 +811,14 @@ export function DiagramEditor({
             <button
               type="button"
               onClick={() => setPanelTab("phases")}
-              className={`flex-1 px-4 py-4 text-sm font-semibold ${panelTab === "phases" ? "border-b-2 border-[#0c9d8d] text-slate-900" : "text-slate-500"}`}
+              className={`flex-1 px-6 py-5 text-lg font-medium ${panelTab === "phases" ? "border-b-2 border-[#0c9d8d] text-slate-900" : "text-slate-500"}`}
             >
               Phases
             </button>
             <button
               type="button"
               onClick={() => setPanelTab("objects")}
-              className={`flex-1 px-4 py-4 text-sm font-semibold ${panelTab === "objects" ? "border-b-2 border-[#0c9d8d] text-slate-900" : "text-slate-500"}`}
+              className={`flex-1 px-6 py-5 text-lg font-medium ${panelTab === "objects" ? "border-b-2 border-[#0c9d8d] text-slate-900" : "text-slate-500"}`}
             >
               Objects
             </button>
