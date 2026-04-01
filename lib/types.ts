@@ -16,13 +16,29 @@ export type DrillDetail = DrillSummary & {
   age_group: string | null;
 };
 
+export type PlayerColor = "blue" | "red" | "yellow" | "green" | "white";
+
 export type DiagramObject =
-  | { id: string; type: "player"; x: number; y: number; label: string }
-  | { id: string; type: "arrow"; x1: number; y1: number; x2: number; y2: number }
+  | { id: string; type: "player"; x: number; y: number; label: string; color: PlayerColor }
+  | { id: string; type: "cone"; x: number; y: number }
+  | { id: string; type: "ball"; x: number; y: number }
+  | { id: string; type: "arrow"; style: "straight" | "curved"; x1: number; y1: number; x2: number; y2: number; cx?: number; cy?: number; color: string }
   | { id: string; type: "text"; x: number; y: number; text: string }
   | { id: string; type: "path"; d: string };
 
+export type DiagramSlide = {
+  id: string;
+  name: string;
+  courtType: "half_court" | "full_court";
+  objects: DiagramObject[];
+};
+
 export type DiagramPayload = {
+  activeSlideId: string;
+  slides: DiagramSlide[];
+};
+
+export type LegacyDiagramPayload = {
   courtType: "half_court" | "full_court";
   objects: DiagramObject[];
 };

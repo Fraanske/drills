@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DiagramEditor } from "@/components/diagram-editor";
+import { normalizeDiagramPayload } from "@/lib/diagram";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 import type { DiagramPayload, DrillDetail } from "@/lib/types";
 
@@ -20,16 +21,13 @@ export default async function DrillDetailPage({ params }: { params: Promise<{ id
 
   const { data: diagram } = await supabase
     .from("diagrams")
-    .select("data_json")
+    .select("id, data_json")
     .eq("drill_id", id)
     .order("updated_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  const initialDiagram = ((diagram?.data_json as DiagramPayload | null) ?? {
-    courtType: "full_court",
-    objects: [],
-  }) as DiagramPayload;
+  const initialDiagram = normalizeDiagramPayload(diagram?.data_json);
 
   const typedDrill = drill as DrillDetail;
 
@@ -66,7 +64,7 @@ export default async function DrillDetailPage({ params }: { params: Promise<{ id
             </div>
           </div>
 
-          <DiagramEditor initialDiagram={initialDiagram} />
+          <DiagramEditor initialDiagram={initialDiagram} drillId={id} />
         </section>
       </div>
     </main>
