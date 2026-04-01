@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { DiagramObject, DiagramPayload, DiagramSlide, PlayerColor } from "@/lib/types";
+import type { DiagramColor, DiagramObject, DiagramPayload, DiagramSlide } from "@/lib/types";
 import { createEmptySlide } from "@/lib/diagram";
 
 function uid() {
@@ -13,15 +13,19 @@ type Point = { x: number; y: number };
 type DraftArrow = Extract<DiagramObject, { type: "arrow" }>;
 
 const boardWidth = 780;
-const boardHeight = 460;
-const playerColors: PlayerColor[] = ["blue", "red", "yellow", "green", "white"];
-const playerColorStyles: Record<PlayerColor, { fill: string; stroke: string; text: string }> = {
+const boardHeight = 410;
+const diagramColors: DiagramColor[] = ["blue", "red", "yellow", "green", "white"];
+const colorStyles: Record<DiagramColor, { fill: string; stroke: string; text: string }> = {
   blue: { fill: "#1d4ed8", stroke: "#dbeafe", text: "#ffffff" },
   red: { fill: "#dc2626", stroke: "#fee2e2", text: "#ffffff" },
   yellow: { fill: "#facc15", stroke: "#854d0e", text: "#1f2937" },
   green: { fill: "#16a34a", stroke: "#dcfce7", text: "#ffffff" },
   white: { fill: "#ffffff", stroke: "#0f172a", text: "#0f172a" },
 };
+
+function getColorStyle(color: DiagramColor) {
+  return colorStyles[color];
+}
 
 function getArrowPath(arrow: DraftArrow) {
   if (arrow.style === "curved" && typeof arrow.cx === "number" && typeof arrow.cy === "number") {
@@ -31,24 +35,30 @@ function getArrowPath(arrow: DraftArrow) {
   return `M ${arrow.x1} ${arrow.y1} L ${arrow.x2} ${arrow.y2}`;
 }
 
-function getArrowHeadPoint(arrow: DraftArrow) {
+function getArrowAngle(arrow: DraftArrow) {
   if (arrow.style === "curved" && typeof arrow.cx === "number" && typeof arrow.cy === "number") {
-    const t = 0.92;
-    const x =
-      (1 - t) * (1 - t) * arrow.x1 +
-      2 * (1 - t) * t * arrow.cx +
-      t * t * arrow.x2;
-    const y =
-      (1 - t) * (1 - t) * arrow.y1 +
-      2 * (1 - t) * t * arrow.cy +
-      t * t * arrow.y2;
-    return { x, y };
+    return Math.atan2(arrow.y2 - arrow.cy, arrow.x2 - arrow.cx);
   }
 
-  return { x: arrow.x2, y: arrow.y2 };
+  return Math.atan2(arrow.y2 - arrow.y1, arrow.x2 - arrow.x1);
 }
 
-function createArrow(start: Point, end: Point, style: "straight" | "curved"): DraftArrow {
+function getArrowHeadPolygon(arrow: DraftArrow) {
+  const angle = getArrowAngle(arrow);
+  const length = 13;
+  const halfWidth = 6;
+  const tipX = arrow.x2;
+  const tipY = arrow.y2;
+  const backX = tipX - Math.cos(angle) * length;
+  const backY = tipY - Math.sin(angle) * length;
+  const leftX = backX + Math.sin(angle) * halfWidth;
+  const leftY = backY - Math.cos(angle) * halfWidth;
+  const rightX = backX - Math.sin(angle) * halfWidth;
+  const rightY = backY + Math.cos(angle) * halfWidth;
+  return `${tipX},${tipY} ${leftX},${leftY} ${rightX},${rightY}`;
+}
+
+function createArrow(start: Point, end: Point, style: "straight" | "curved", color: DiagramColor): DraftArrow {
   const arrow: DraftArrow = {
     id: uid(),
     type: "arrow",
@@ -57,7 +67,7 @@ function createArrow(start: Point, end: Point, style: "straight" | "curved"): Dr
     y1: start.y,
     x2: end.x,
     y2: end.y,
-    color: "#0f172a",
+    color,
   };
 
   if (style === "curved") {
@@ -81,7 +91,7 @@ export function DiagramEditor({
   const [history, setHistory] = useState<DiagramPayload[]>([]);
   const [future, setFuture] = useState<DiagramPayload[]>([]);
   const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
-  const [activePlayerColor, setActivePlayerColor] = useState<PlayerColor>("blue");
+  const [activeItemColor, setActiveItemColor] = useState<DiagramColor>("blue");
   const [draftArrow, setDraftArrow] = useState<DraftArrow | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragLastPoint, setDragLastPoint] = useState<Point | null>(null);
@@ -134,7 +144,7 @@ export function DiagramEditor({
         x: point.x,
         y: point.y,
         label: String(activeSlide.objects.filter((item) => item.type === "player").length + 1),
-        color: activePlayerColor,
+        color: activeItemColor,
       };
       setActiveSlideObjects((current) => [...current, next]);
       setActiveObjectId(next.id);
@@ -142,21 +152,40 @@ export function DiagramEditor({
     }
 
     if (tool === "cone") {
-      const next: Extract<DiagramObject, { type: "cone" }> = { id: uid(), type: "cone", x: point.x, y: point.y };
+      const next: Extract<DiagramObject, { type: "cone" }> = {
+        id: uid(),
+        type: "cone",
+        x: point.x,
+        y: point.y,
+        color: activeItemColor,
+      };
       setActiveSlideObjects((current) => [...current, next]);
       setActiveObjectId(next.id);
       return;
     }
 
     if (tool === "ball") {
-      const next: Extract<DiagramObject, { type: "ball" }> = { id: uid(), type: "ball", x: point.x, y: point.y };
+      const next: Extract<DiagramObject, { type: "ball" }> = {
+        id: uid(),
+        type: "ball",
+        x: point.x,
+        y: point.y,
+        color: activeItemColor,
+      };
       setActiveSlideObjects((current) => [...current, next]);
       setActiveObjectId(next.id);
       return;
     }
 
     if (tool === "text") {
-      const next: Extract<DiagramObject, { type: "text" }> = { id: uid(), type: "text", x: point.x, y: point.y, text: "Note" };
+      const next: Extract<DiagramObject, { type: "text" }> = {
+        id: uid(),
+        type: "text",
+        x: point.x,
+        y: point.y,
+        text: "Note",
+        color: activeItemColor,
+      };
       setActiveSlideObjects((current) => [...current, next]);
       setActiveObjectId(next.id);
     }
@@ -192,13 +221,13 @@ export function DiagramEditor({
     const point = pointFromMouse(event);
 
     if (tool === "straightArrow") {
-      setDraftArrow(createArrow(point, point, "straight"));
+      setDraftArrow(createArrow(point, point, "straight", activeItemColor));
       setActiveObjectId(null);
       return;
     }
 
     if (tool === "curvedArrow") {
-      setDraftArrow(createArrow(point, point, "curved"));
+      setDraftArrow(createArrow(point, point, "curved", activeItemColor));
       setActiveObjectId(null);
       return;
     }
@@ -215,14 +244,18 @@ export function DiagramEditor({
     const point = pointFromMouse(event);
 
     if (draftArrow) {
-      setDraftArrow((current) => (current ? createArrow({ x: current.x1, y: current.y1 }, point, current.style) : null));
+      setDraftArrow((current) =>
+        current ? createArrow({ x: current.x1, y: current.y1 }, point, current.style, current.color) : null,
+      );
       return;
     }
 
     if (draggingId && dragLastPoint) {
       const dx = point.x - dragLastPoint.x;
       const dy = point.y - dragLastPoint.y;
-      setActiveSlideObjects((current) => current.map((item) => (item.id === draggingId ? moveObjectByDelta(item, dx, dy) : item)));
+      setActiveSlideObjects((current) =>
+        current.map((item) => (item.id === draggingId ? moveObjectByDelta(item, dx, dy) : item)),
+      );
       setDragLastPoint(point);
     }
   }
@@ -251,11 +284,11 @@ export function DiagramEditor({
     );
   }
 
-  function updateActivePlayerColor(color: PlayerColor) {
-    if (!activeObject || activeObject.type !== "player") return;
+  function updateActiveObjectColor(color: DiagramColor) {
+    if (!activeObject || activeObject.type === "path") return;
 
     setActiveSlideObjects((current) =>
-      current.map((item) => (item.id === activeObject.id && item.type === "player" ? { ...item, color } : item)),
+      current.map((item) => (item.id === activeObject.id && "color" in item ? { ...item, color } : item)),
     );
   }
 
@@ -324,9 +357,7 @@ export function DiagramEditor({
     const offset = 28;
     let next: DiagramObject;
 
-    if (activeObject.type === "player") {
-      next = { ...activeObject, id: uid(), x: activeObject.x + offset, y: activeObject.y + offset };
-    } else if (activeObject.type === "cone" || activeObject.type === "ball" || activeObject.type === "text") {
+    if (activeObject.type === "player" || activeObject.type === "cone" || activeObject.type === "ball" || activeObject.type === "text") {
       next = { ...activeObject, id: uid(), x: activeObject.x + offset, y: activeObject.y + offset };
     } else if (activeObject.type === "arrow") {
       next = {
@@ -374,7 +405,7 @@ export function DiagramEditor({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         drillId,
-        diagram: diagram,
+        diagram,
       }),
     });
 
@@ -430,153 +461,162 @@ export function DiagramEditor({
   if (!activeSlide) return null;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[290px,1fr]">
-      <div className="rounded-3xl border border-slate-200 bg-white p-4">
-        <h2 className="text-lg font-semibold">Diagram tools</h2>
-        <div className="mt-4 grid gap-2">
-          {(
-            [
-              ["select", "Select"],
-              ["player", "Player"],
-              ["cone", "Cone"],
-              ["ball", "Ball"],
-              ["straightArrow", "Straight arrow"],
-              ["curvedArrow", "Curved arrow"],
-              ["text", "Text"],
-            ] as Array<[Tool, string]>
-          ).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setTool(value)}
-              className={`rounded-2xl border px-4 py-3 text-left text-sm ${tool === value ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700"}`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-6 space-y-3 border-t border-slate-200 pt-4">
-          <p className="text-sm font-medium text-slate-800">Player colors</p>
-          <div className="flex flex-wrap gap-2">
-            {playerColors.map((color) => {
-              const style = playerColorStyles[color];
-              return (
+    <div className="grid gap-4 xl:grid-cols-[252px,1fr]">
+      <div className="rounded-3xl border border-slate-200 bg-white p-3">
+        <div className="grid gap-3">
+          <div>
+            <p className="text-sm font-semibold text-slate-900">Diagram tools</p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {(
+                [
+                  ["select", "Select"],
+                  ["player", "Player"],
+                  ["cone", "Cone"],
+                  ["ball", "Ball"],
+                  ["straightArrow", "Straight"],
+                  ["curvedArrow", "Curved"],
+                  ["text", "Text"],
+                ] as Array<[Tool, string]>
+              ).map(([value, label]) => (
                 <button
-                  key={color}
+                  key={value}
                   type="button"
-                  onClick={() => {
-                    setActivePlayerColor(color);
-                    updateActivePlayerColor(color);
-                  }}
-                  className={`h-9 w-9 rounded-full border-2 ${activePlayerColor === color ? "border-slate-900" : "border-slate-200"}`}
-                  style={{ backgroundColor: style.fill }}
-                  title={color}
-                />
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="mt-6 space-y-3 border-t border-slate-200 pt-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-slate-800">History</p>
-            <div className="flex gap-2">
-              <button type="button" onClick={undo} disabled={history.length === 0} className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 disabled:opacity-40">
-                Undo
-              </button>
-              <button type="button" onClick={redo} disabled={future.length === 0} className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 disabled:opacity-40">
-                Redo
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6 space-y-3 border-t border-slate-200 pt-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-slate-800">Slides</p>
-            <div className="flex items-center gap-3">
-              <button type="button" onClick={duplicateActiveSlide} className="text-xs font-semibold text-slate-700">
-                Duplicate slide
-              </button>
-              {diagram.slides.length > 1 && (
-                <button type="button" onClick={deleteActiveSlide} className="text-xs font-semibold text-red-600">
-                  Delete slide
+                  onClick={() => setTool(value)}
+                  className={`rounded-xl border px-3 py-2 text-left text-xs font-medium ${tool === value ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700"}`}
+                >
+                  {label}
                 </button>
-              )}
+              ))}
             </div>
           </div>
-          <div className="space-y-2">
-            {diagram.slides.map((slide, index) => (
-              <button
-                key={slide.id}
-                type="button"
-                onClick={() => {
-                  setDiagram((current) => ({ ...current, activeSlideId: slide.id }));
-                  setActiveObjectId(null);
-                }}
-                className={`w-full rounded-2xl border px-4 py-3 text-left text-sm ${slide.id === activeSlide.id ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700"}`}
-              >
-                {slide.name || `Slide ${index + 1}`}
-              </button>
-            ))}
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => addSlide("half_court")} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
-              + Half court
-            </button>
-            <button type="button" onClick={() => addSlide("full_court")} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
-              + Full court
-            </button>
-          </div>
-        </div>
 
-        <div className="mt-6 space-y-3 border-t border-slate-200 pt-4">
-          <p className="text-sm font-medium text-slate-800">Selected slide</p>
-          <input
-            value={activeSlide.name}
-            onChange={(event) => updateSlideName(event.target.value)}
-            className="w-full rounded-xl border border-slate-300 px-3 py-2"
-          />
-          <div className="flex gap-2">
-            {(["half_court", "full_court"] as const).map((courtType) => (
-              <button
-                key={courtType}
-                type="button"
-                onClick={() => updateCourtType(courtType)}
-                className={`rounded-xl px-3 py-2 text-sm ${activeSlide.courtType === courtType ? "bg-slate-900 text-white" : "border border-slate-200 bg-white text-slate-700"}`}
-              >
-                {courtType === "half_court" ? "Half court" : "Full court"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-6 space-y-3 border-t border-slate-200 pt-4">
-          <p className="text-sm font-medium text-slate-800">Selected item</p>
-          {!activeObject && <p className="text-sm text-slate-500">Nothing selected.</p>}
-          {activeObject?.type === "player" && (
-            <input value={activeObject.label} onChange={(event) => updateActiveLabel(event.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2" />
-          )}
-          {activeObject?.type === "text" && (
-            <input value={activeObject.text} onChange={(event) => updateActiveLabel(event.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2" />
-          )}
-          {activeObject && (
-            <div className="grid grid-cols-2 gap-2">
-              <button type="button" onClick={duplicateActiveObject} className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700">
-                Duplicate
-              </button>
-              <button type="button" onClick={deleteActiveObject} className="rounded-xl border border-red-200 px-3 py-2 text-sm text-red-700">
-                Delete
-              </button>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Item color</p>
+              <span className="text-xs text-slate-500">All items</span>
             </div>
-          )}
-        </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {diagramColors.map((color) => {
+                const style = getColorStyle(color);
+                return (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => {
+                      setActiveItemColor(color);
+                      updateActiveObjectColor(color);
+                    }}
+                    className={`h-8 w-8 rounded-full border-2 ${activeItemColor === color ? "border-slate-900" : "border-slate-200"}`}
+                    style={{ backgroundColor: style.fill }}
+                    title={color}
+                  />
+                );
+              })}
+            </div>
+          </div>
 
-        <button type="button" disabled={isSaving} onClick={saveDiagram} className="mt-6 w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-medium text-white disabled:opacity-60">
-          {isSaving ? "Saving..." : "Save drill diagram"}
-        </button>
-        {saveMessage ? <p className="mt-3 text-sm text-slate-600">{saveMessage}</p> : null}
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            <div className="rounded-2xl border border-slate-200 p-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-slate-800">History</p>
+                <div className="flex gap-2">
+                  <button type="button" onClick={undo} disabled={history.length === 0} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-700 disabled:opacity-40">
+                    Undo
+                  </button>
+                  <button type="button" onClick={redo} disabled={future.length === 0} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-700 disabled:opacity-40">
+                    Redo
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 p-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-slate-800">Slides</p>
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={duplicateActiveSlide} className="text-xs font-semibold text-slate-700">
+                    Duplicate
+                  </button>
+                  {diagram.slides.length > 1 && (
+                    <button type="button" onClick={deleteActiveSlide} className="text-xs font-semibold text-red-600">
+                      Delete
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="mt-2 space-y-2">
+                {diagram.slides.map((slide, index) => (
+                  <button
+                    key={slide.id}
+                    type="button"
+                    onClick={() => {
+                      setDiagram((current) => ({ ...current, activeSlideId: slide.id }));
+                      setActiveObjectId(null);
+                    }}
+                    className={`w-full rounded-xl border px-3 py-2 text-left text-xs font-medium ${slide.id === activeSlide.id ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700"}`}
+                  >
+                    {slide.name || `Slide ${index + 1}`}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => addSlide("half_court")} className="rounded-lg border border-slate-200 px-3 py-2 text-xs">
+                  + Half
+                </button>
+                <button type="button" onClick={() => addSlide("full_court")} className="rounded-lg border border-slate-200 px-3 py-2 text-xs">
+                  + Full
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 p-3">
+            <p className="text-sm font-medium text-slate-800">Selected slide</p>
+            <input
+              value={activeSlide.name}
+              onChange={(event) => updateSlideName(event.target.value)}
+              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+            <div className="mt-2 flex gap-2">
+              {(["half_court", "full_court"] as const).map((courtType) => (
+                <button
+                  key={courtType}
+                  type="button"
+                  onClick={() => updateCourtType(courtType)}
+                  className={`rounded-lg px-3 py-2 text-xs ${activeSlide.courtType === courtType ? "bg-slate-900 text-white" : "border border-slate-200 bg-white text-slate-700"}`}
+                >
+                  {courtType === "half_court" ? "Half court" : "Full court"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 p-3">
+            <p className="text-sm font-medium text-slate-800">Selected item</p>
+            {!activeObject && <p className="mt-2 text-sm text-slate-500">Nothing selected.</p>}
+            {activeObject?.type === "player" && (
+              <input value={activeObject.label} onChange={(event) => updateActiveLabel(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+            )}
+            {activeObject?.type === "text" && (
+              <input value={activeObject.text} onChange={(event) => updateActiveLabel(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+            )}
+            {activeObject && (
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <button type="button" onClick={duplicateActiveObject} className="rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-700">
+                  Duplicate
+                </button>
+                <button type="button" onClick={deleteActiveObject} className="rounded-lg border border-red-200 px-3 py-2 text-xs text-red-700">
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button type="button" disabled={isSaving} onClick={saveDiagram} className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-medium text-white disabled:opacity-60">
+            {isSaving ? "Saving..." : "Save drill diagram"}
+          </button>
+          {saveMessage ? <p className="text-sm text-slate-600">{saveMessage}</p> : null}
+        </div>
       </div>
 
       <div className="rounded-3xl border border-slate-200 bg-white p-4">
@@ -589,32 +629,26 @@ export function DiagramEditor({
           onMouseUp={onBoardMouseUp}
           onMouseLeave={onBoardMouseUp}
         >
-          <defs>
-            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-              <polygon points="0 0, 10 3.5, 0 7" fill="#0f172a" />
-            </marker>
-          </defs>
-
           {activeSlide.courtType === "full_court" ? (
             <>
-              <rect x="20" y="20" width="740" height="420" rx="24" fill="#fef3c7" stroke="#fcd34d" strokeWidth="2" />
-              <line x1="390" y1="20" x2="390" y2="440" stroke="#fcd34d" strokeWidth="2" />
-              <circle cx="390" cy="230" r="52" fill="none" stroke="#fcd34d" strokeWidth="2" />
-              <rect x="20" y="140" width="110" height="180" fill="none" stroke="#fcd34d" strokeWidth="2" />
-              <rect x="650" y="140" width="110" height="180" fill="none" stroke="#fcd34d" strokeWidth="2" />
+              <rect x="20" y="20" width="740" height="370" rx="24" fill="#fef3c7" stroke="#fcd34d" strokeWidth="2" />
+              <line x1="390" y1="20" x2="390" y2="390" stroke="#fcd34d" strokeWidth="2" />
+              <circle cx="390" cy="205" r="52" fill="none" stroke="#fcd34d" strokeWidth="2" />
+              <rect x="20" y="115" width="110" height="180" fill="none" stroke="#fcd34d" strokeWidth="2" />
+              <rect x="650" y="115" width="110" height="180" fill="none" stroke="#fcd34d" strokeWidth="2" />
             </>
           ) : (
             <>
-              <rect x="70" y="30" width="640" height="390" rx="24" fill="#fef3c7" stroke="#fcd34d" strokeWidth="2" />
-              <rect x="290" y="250" width="200" height="170" fill="none" stroke="#fcd34d" strokeWidth="2" />
-              <line x1="70" y1="250" x2="710" y2="250" stroke="#fcd34d" strokeWidth="2" />
-              <circle cx="390" cy="250" r="62" fill="none" stroke="#fcd34d" strokeWidth="2" />
+              <rect x="70" y="25" width="640" height="355" rx="24" fill="#fef3c7" stroke="#fcd34d" strokeWidth="2" />
+              <rect x="290" y="210" width="200" height="170" fill="none" stroke="#fcd34d" strokeWidth="2" />
+              <line x1="70" y1="210" x2="710" y2="210" stroke="#fcd34d" strokeWidth="2" />
+              <circle cx="390" cy="210" r="62" fill="none" stroke="#fcd34d" strokeWidth="2" />
             </>
           )}
 
           {activeSlide.objects.map((item) => {
             if (item.type === "player") {
-              const style = playerColorStyles[item.color];
+              const style = getColorStyle(item.color);
               return (
                 <g
                   key={item.id}
@@ -629,18 +663,21 @@ export function DiagramEditor({
                   }}
                 >
                   <circle cx={item.x} cy={item.y} r="18" fill={style.fill} stroke={item.id === activeObjectId ? "#f59e0b" : style.stroke} strokeWidth="3" />
-                  <text x={item.x} y={item.y + 5} textAnchor="middle" fontSize="14" fontWeight="700" fill={style.text}>{item.label}</text>
+                  <text x={item.x} y={item.y + 5} textAnchor="middle" fontSize="14" fontWeight="700" fill={style.text}>
+                    {item.label}
+                  </text>
                 </g>
               );
             }
 
             if (item.type === "cone") {
+              const style = getColorStyle(item.color);
               return (
                 <path
                   key={item.id}
                   d={`M ${item.x} ${item.y - 16} L ${item.x - 14} ${item.y + 16} L ${item.x + 14} ${item.y + 16} Z`}
-                  fill={item.id === activeObjectId ? "#fb923c" : "#f97316"}
-                  stroke="#7c2d12"
+                  fill={item.id === activeObjectId ? "#fb923c" : style.fill}
+                  stroke={style.stroke}
                   strokeWidth="2"
                   onMouseDown={(event) => {
                     event.stopPropagation();
@@ -656,6 +693,7 @@ export function DiagramEditor({
             }
 
             if (item.type === "ball") {
+              const style = getColorStyle(item.color);
               return (
                 <g
                   key={item.id}
@@ -669,15 +707,15 @@ export function DiagramEditor({
                     setActiveObjectId(item.id);
                   }}
                 >
-                  <circle cx={item.x} cy={item.y} r="14" fill="#fb923c" stroke={item.id === activeObjectId ? "#7c2d12" : "#9a3412"} strokeWidth="2" />
-                  <path d={`M ${item.x - 14} ${item.y} Q ${item.x} ${item.y - 6} ${item.x + 14} ${item.y}`} fill="none" stroke="#7c2d12" strokeWidth="1.5" />
-                  <path d={`M ${item.x} ${item.y - 14} Q ${item.x - 5} ${item.y} ${item.x} ${item.y + 14}`} fill="none" stroke="#7c2d12" strokeWidth="1.5" />
+                  <circle cx={item.x} cy={item.y} r="14" fill={style.fill} stroke={item.id === activeObjectId ? "#7c2d12" : style.stroke} strokeWidth="2" />
+                  <path d={`M ${item.x - 14} ${item.y} Q ${item.x} ${item.y - 6} ${item.x + 14} ${item.y}`} fill="none" stroke={style.stroke} strokeWidth="1.5" />
+                  <path d={`M ${item.x} ${item.y - 14} Q ${item.x - 5} ${item.y} ${item.x} ${item.y + 14}`} fill="none" stroke={style.stroke} strokeWidth="1.5" />
                 </g>
               );
             }
 
             if (item.type === "arrow") {
-              const head = getArrowHeadPoint(item);
+              const stroke = item.id === activeObjectId ? "#ea580c" : getColorStyle(item.color).fill;
               return (
                 <g
                   key={item.id}
@@ -691,10 +729,8 @@ export function DiagramEditor({
                     setActiveObjectId(item.id);
                   }}
                 >
-                  <path d={getArrowPath(item)} fill="none" stroke={item.id === activeObjectId ? "#ea580c" : item.color} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" markerEnd="url(#arrowhead)" />
-                  {item.style === "curved" && typeof item.cx === "number" && typeof item.cy === "number" ? (
-                    <circle cx={head.x} cy={head.y} r="0.1" fill="transparent" />
-                  ) : null}
+                  <path d={getArrowPath(item)} fill="none" stroke={stroke} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+                  <polygon points={getArrowHeadPolygon(item)} fill={stroke} />
                 </g>
               );
             }
@@ -707,7 +743,7 @@ export function DiagramEditor({
                   y={item.y}
                   fontSize="16"
                   fontWeight="700"
-                  fill={item.id === activeObjectId ? "#c2410c" : "#0f172a"}
+                  fill={item.id === activeObjectId ? "#c2410c" : getColorStyle(item.color).fill}
                   onMouseDown={(event) => {
                     event.stopPropagation();
                     if (tool === "select") startDragging(item.id, pointFromMouse(event));
@@ -727,16 +763,18 @@ export function DiagramEditor({
           })}
 
           {draftArrow ? (
-            <path
-              d={getArrowPath(draftArrow)}
-              fill="none"
-              stroke="#ea580c"
-              strokeWidth="4"
-              strokeDasharray="6 6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              markerEnd="url(#arrowhead)"
-            />
+            <>
+              <path
+                d={getArrowPath(draftArrow)}
+                fill="none"
+                stroke="#ea580c"
+                strokeWidth="4"
+                strokeDasharray="6 6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <polygon points={getArrowHeadPolygon(draftArrow)} fill="#ea580c" />
+            </>
           ) : null}
         </svg>
       </div>

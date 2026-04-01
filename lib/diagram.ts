@@ -1,4 +1,4 @@
-import type { DiagramObject, DiagramPayload, DiagramSlide, LegacyDiagramPayload, PlayerColor } from "@/lib/types";
+import type { DiagramColor, DiagramObject, DiagramPayload, DiagramSlide, LegacyDiagramPayload, PlayerColor } from "@/lib/types";
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -27,6 +27,10 @@ function normalizePlayerColor(color: unknown): PlayerColor {
     : "blue";
 }
 
+function normalizeDiagramColor(color: unknown): DiagramColor {
+  return normalizePlayerColor(color);
+}
+
 function normalizeObject(input: unknown): DiagramObject | null {
   if (!input || typeof input !== "object" || !("type" in input)) return null;
 
@@ -45,11 +49,11 @@ function normalizeObject(input: unknown): DiagramObject | null {
   }
 
   if (item.type === "cone" && typeof item.x === "number" && typeof item.y === "number") {
-    return { id, type: "cone", x: item.x, y: item.y };
+    return { id, type: "cone", x: item.x, y: item.y, color: normalizeDiagramColor(item.color) };
   }
 
   if (item.type === "ball" && typeof item.x === "number" && typeof item.y === "number") {
-    return { id, type: "ball", x: item.x, y: item.y };
+    return { id, type: "ball", x: item.x, y: item.y, color: normalizeDiagramColor(item.color) };
   }
 
   if (item.type === "arrow" && typeof item.x1 === "number" && typeof item.y1 === "number" && typeof item.x2 === "number" && typeof item.y2 === "number") {
@@ -63,7 +67,7 @@ function normalizeObject(input: unknown): DiagramObject | null {
       y2: item.y2,
       cx: typeof item.cx === "number" ? item.cx : undefined,
       cy: typeof item.cy === "number" ? item.cy : undefined,
-      color: typeof item.color === "string" ? item.color : "#0f172a",
+      color: normalizeDiagramColor(item.color),
     };
   }
 
@@ -74,6 +78,7 @@ function normalizeObject(input: unknown): DiagramObject | null {
       x: item.x,
       y: item.y,
       text: typeof item.text === "string" ? item.text : "Note",
+      color: normalizeDiagramColor(item.color),
     };
   }
 
