@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CircleDot, ClipboardList, Cone, MoveRight, PenLine, Play, Redo2, Save, Spline, StickyNote, Undo2, Users } from "lucide-react";
 import type { DiagramColor, DiagramObject, DiagramPayload, DiagramSlide } from "@/lib/types";
 import { createEmptySlide } from "@/lib/diagram";
 
@@ -9,6 +10,7 @@ function uid() {
 }
 
 type Tool = "select" | "player" | "cone" | "ball" | "straightArrow" | "curvedArrow" | "text";
+type PanelTab = "phases" | "objects";
 type Point = { x: number; y: number };
 type DraftArrow = Extract<DiagramObject, { type: "arrow" }>;
 
@@ -219,6 +221,31 @@ function FullCourtShape() {
   );
 }
 
+function ToolButton({
+  active,
+  label,
+  onClick,
+  icon,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+  icon: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition ${
+        active ? "bg-white text-[#0c9d8d]" : "bg-white/12 text-white hover:bg-white/18"
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
 export function DiagramEditor({
   initialDiagram,
   drillId,
@@ -227,6 +254,7 @@ export function DiagramEditor({
   drillId: string;
 }) {
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const [panelTab, setPanelTab] = useState<PanelTab>("phases");
   const [tool, setTool] = useState<Tool>("player");
   const [diagram, setDiagram] = useState<DiagramPayload>(initialDiagram);
   const [history, setHistory] = useState<DiagramPayload[]>([]);
@@ -238,6 +266,7 @@ export function DiagramEditor({
   const [dragLastPoint, setDragLastPoint] = useState<Point | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [textTemplate, setTextTemplate] = useState("Note");
 
   const activeSlide = useMemo(
     () => diagram.slides.find((slide) => slide.id === diagram.activeSlideId) ?? diagram.slides[0],
@@ -248,6 +277,17 @@ export function DiagramEditor({
     () => activeSlide?.objects.find((item) => item.id === activeObjectId) ?? null,
     [activeObjectId, activeSlide],
   );
+
+  const objectSummary = useMemo(() => {
+    const objects = activeSlide?.objects ?? [];
+    return {
+      players: objects.filter((item) => item.type === "player").length,
+      arrows: objects.filter((item) => item.type === "arrow").length,
+      cones: objects.filter((item) => item.type === "cone").length,
+      balls: objects.filter((item) => item.type === "ball").length,
+      notes: objects.filter((item) => item.type === "text").length,
+    };
+  }, [activeSlide]);
 
   function commitDiagram(update: (current: DiagramPayload) => DiagramPayload) {
     setDiagram((current) => {
@@ -273,6 +313,67 @@ export function DiagramEditor({
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect) return { x: 0, y: 0 };
     return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  }
+
+  function getPresetPoint(index: number) {
+    const halfCourtPresets: Point[] = [
+      { x: 260, y: 285 },
+      { x: 340, y: 255 },
+      { x: 440, y: 255 },
+      { x: 520, y: 285 },
+      { x: 390, y: 330 },
+      { x: 610, y: 300 },
+    ];
+    const fullCourtPresets: Point[] = [
+      { x: 240, y: 280 },
+      { x: 320, y: 220 },
+      { x: 460, y: 220 },
+      { x: 540, y: 280 },
+      { x: 390, y: 340 },
+      { x: 390, y: 120 },
+    ];
+    const presets = activeSlide?.courtType === "full_court" ? fullCourtPresets : halfCourtPresets;
+    return presets[index % presets.length];
+  }
+
+  function placeLabeledPlayer(label: string, color: DiagramColor) {
+    const playerCount = activeSlide?.objects.filter((item) => item.type === "player").length ?? 0;
+    const point = getPresetPoint(playerCount);
+    const next: Extract<DiagramObject, { type: "player" }> = {
+      id: uid(),
+      type: "player",
+      x: point.x,
+      y: point.y,
+      label,
+      color,
+    };
+    setActiveSlideObjects((current) => [...current, next]);
+    setActiveObjectId(next.id);
+    setTool("select");
+  }
+
+  function placePresetObject(type: "ball" | "cone") {
+    const count = activeSlide?.objects.length ?? 0;
+    const point = getPresetPoint(count + 1);
+    const next =
+      type === "ball"
+        ? ({
+            id: uid(),
+            type: "ball",
+            x: point.x,
+            y: point.y,
+            color: activeItemColor,
+          } as Extract<DiagramObject, { type: "ball" }>)
+        : ({
+            id: uid(),
+            type: "cone",
+            x: point.x,
+            y: point.y,
+            color: activeItemColor,
+          } as Extract<DiagramObject, { type: "cone" }>);
+    setActiveSlideObjects((current) => [...current, next]);
+    setActiveObjectId(next.id);
+    setTool("select");
   }
 
   function addObject(point: Point) {
@@ -324,7 +425,7 @@ export function DiagramEditor({
         type: "text",
         x: point.x,
         y: point.y,
-        text: "Note",
+        text: textTemplate,
         color: activeItemColor,
       };
       setActiveSlideObjects((current) => [...current, next]);
@@ -602,90 +703,71 @@ export function DiagramEditor({
   if (!activeSlide) return null;
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[252px,1fr]">
-      <div className="rounded-3xl border border-slate-200 bg-white p-3">
-        <div className="grid gap-3">
-          <div>
-            <p className="text-sm font-semibold text-slate-900">Diagram tools</p>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              {(
-                [
-                  ["select", "Select"],
-                  ["player", "Player"],
-                  ["cone", "Cone"],
-                  ["ball", "Ball"],
-                  ["straightArrow", "Straight"],
-                  ["curvedArrow", "Curved"],
-                  ["text", "Text"],
-                ] as Array<[Tool, string]>
-              ).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setTool(value)}
-                  className={`rounded-xl border px-3 py-2 text-left text-xs font-medium ${tool === value ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700"}`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+    <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-center gap-4 bg-[#0c9d8d] px-4 py-3 text-white">
+        <button type="button" className="rounded-xl border border-white/25 px-4 py-2 text-sm font-semibold">
+          Close
+        </button>
+        <div className="hidden items-center gap-2 md:flex">
+          <ToolButton active label="Draw" onClick={() => setPanelTab("phases")} icon={<PenLine size={15} />} />
+          <ToolButton active={false} label="Animate" onClick={() => {}} icon={<Play size={15} />} />
+          <ToolButton active={false} label="Notes" onClick={() => {}} icon={<StickyNote size={15} />} />
+          <ToolButton active={false} label="Output" onClick={() => {}} icon={<ClipboardList size={15} />} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <input
+            value={activeSlide.name}
+            onChange={(event) => updateSlideName(event.target.value)}
+            className="w-full rounded-xl bg-white/12 px-4 py-2 text-center text-2xl font-bold text-white outline-none placeholder:text-white/60"
+            placeholder="Untitled Play"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={undo} disabled={history.length === 0} className="rounded-xl border border-white/25 p-2 disabled:opacity-40">
+            <Undo2 size={18} />
+          </button>
+          <button type="button" onClick={redo} disabled={future.length === 0} className="rounded-xl border border-white/25 p-2 disabled:opacity-40">
+            <Redo2 size={18} />
+          </button>
+          <button type="button" onClick={saveDiagram} disabled={isSaving} className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 disabled:opacity-60">
+            <span className="inline-flex items-center gap-2">
+              <Save size={15} />
+              {isSaving ? "Saving..." : "Save Play"}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div className="grid min-h-[720px] xl:grid-cols-[220px,minmax(0,1fr),340px]">
+        <aside className="border-r border-slate-200 bg-white">
+          <div className="flex border-b border-slate-200">
+            <button
+              type="button"
+              onClick={() => setPanelTab("phases")}
+              className={`flex-1 px-4 py-4 text-sm font-semibold ${panelTab === "phases" ? "border-b-2 border-[#0c9d8d] text-slate-900" : "text-slate-500"}`}
+            >
+              Phases
+            </button>
+            <button
+              type="button"
+              onClick={() => setPanelTab("objects")}
+              className={`flex-1 px-4 py-4 text-sm font-semibold ${panelTab === "objects" ? "border-b-2 border-[#0c9d8d] text-slate-900" : "text-slate-500"}`}
+            >
+              Objects
+            </button>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Item color</p>
-              <span className="text-xs text-slate-500">All items</span>
-            </div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {diagramColors.map((color) => {
-                const style = getColorStyle(color);
-                return (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => {
-                      setActiveItemColor(color);
-                      updateActiveObjectColor(color);
-                    }}
-                    className={`h-8 w-8 rounded-full border-2 ${activeItemColor === color ? "border-slate-900" : "border-slate-200"}`}
-                    style={{ backgroundColor: style.fill }}
-                    title={color}
-                  />
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-            <div className="rounded-2xl border border-slate-200 p-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-slate-800">History</p>
-                <div className="flex gap-2">
-                  <button type="button" onClick={undo} disabled={history.length === 0} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-700 disabled:opacity-40">
-                    Undo
-                  </button>
-                  <button type="button" onClick={redo} disabled={future.length === 0} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-700 disabled:opacity-40">
-                    Redo
-                  </button>
-                </div>
+          {panelTab === "phases" ? (
+            <div className="p-5">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+                Phase {diagram.slides.findIndex((slide) => slide.id === activeSlide.id) + 1}/{diagram.slides.length}
+              </p>
+              <div className="mt-4 flex gap-3 text-xs font-semibold text-slate-600">
+                <button type="button" onClick={() => addSlide(activeSlide.courtType)}>Next</button>
+                <button type="button" onClick={duplicateActiveSlide}>Clone</button>
+                {diagram.slides.length > 1 ? <button type="button" onClick={deleteActiveSlide}>Delete</button> : null}
               </div>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 p-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-slate-800">Slides</p>
-                <div className="flex items-center gap-3">
-                  <button type="button" onClick={duplicateActiveSlide} className="text-xs font-semibold text-slate-700">
-                    Duplicate
-                  </button>
-                  {diagram.slides.length > 1 && (
-                    <button type="button" onClick={deleteActiveSlide} className="text-xs font-semibold text-red-600">
-                      Delete
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div className="mt-2 space-y-2">
+              <div className="mt-5 space-y-3">
                 {diagram.slides.map((slide, index) => (
                   <button
                     key={slide.id}
@@ -694,216 +776,264 @@ export function DiagramEditor({
                       setDiagram((current) => ({ ...current, activeSlideId: slide.id }));
                       setActiveObjectId(null);
                     }}
-                    className={`w-full rounded-xl border px-3 py-2 text-left text-xs font-medium ${slide.id === activeSlide.id ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700"}`}
+                    className={`w-full rounded-2xl border p-2 text-left transition ${slide.id === activeSlide.id ? "border-[#1d8fff] shadow-[inset_0_0_0_2px_#1d8fff]" : "border-slate-200"}`}
                   >
-                    {slide.name || `Slide ${index + 1}`}
+                    <div className="rounded-xl bg-[var(--court-board-bg)] p-2">
+                      <svg viewBox={`0 0 ${boardWidth} ${boardHeight}`} className="w-full rounded-lg">
+                        <CourtDefs />
+                        {slide.courtType === "full_court" ? <FullCourtShape /> : <HalfCourtShape />}
+                      </svg>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between px-1 text-xs font-semibold text-slate-700">
+                      <span>{slide.name || `Phase ${index + 1}`}</span>
+                      <span className="text-slate-400">{slide.courtType === "full_court" ? "Full" : "Half"}</span>
+                    </div>
                   </button>
                 ))}
               </div>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => addSlide("half_court")} className="rounded-lg border border-slate-200 px-3 py-2 text-xs">
-                  + Half
-                </button>
-                <button type="button" onClick={() => addSlide("full_court")} className="rounded-lg border border-slate-200 px-3 py-2 text-xs">
-                  + Full
-                </button>
-              </div>
+            </div>
+          ) : (
+            <div className="space-y-3 p-5 text-sm text-slate-700">
+              <div className="rounded-2xl bg-slate-50 p-4"><span className="font-semibold">Players:</span> {objectSummary.players}</div>
+              <div className="rounded-2xl bg-slate-50 p-4"><span className="font-semibold">Actions:</span> {objectSummary.arrows}</div>
+              <div className="rounded-2xl bg-slate-50 p-4"><span className="font-semibold">Cones:</span> {objectSummary.cones}</div>
+              <div className="rounded-2xl bg-slate-50 p-4"><span className="font-semibold">Balls:</span> {objectSummary.balls}</div>
+              <div className="rounded-2xl bg-slate-50 p-4"><span className="font-semibold">Notes:</span> {objectSummary.notes}</div>
+            </div>
+          )}
+        </aside>
+
+        <div className="bg-slate-100/70 p-6">
+          <div className="mx-auto max-w-[920px] rounded-[2rem] bg-[#eef1f5] p-6">
+            <div className="rounded-[1.8rem] bg-[var(--court-board-bg)] p-6 shadow-inner">
+              <svg
+                ref={svgRef}
+                viewBox={`0 0 ${boardWidth} ${boardHeight}`}
+                className="w-full rounded-[1.5rem] bg-[var(--court-board-bg)]"
+                onMouseDown={onBoardMouseDown}
+                onMouseMove={onBoardMouseMove}
+                onMouseUp={onBoardMouseUp}
+                onMouseLeave={onBoardMouseUp}
+              >
+                <CourtDefs />
+                {activeSlide.courtType === "full_court" ? <FullCourtShape /> : <HalfCourtShape />}
+                {activeSlide.objects.map((item) => {
+                  if (item.type === "player") {
+                    const style = getColorStyle(item.color);
+                    return (
+                      <g
+                        key={item.id}
+                        onMouseDown={(event) => {
+                          event.stopPropagation();
+                          if (tool === "select") startDragging(item.id, pointFromMouse(event));
+                          else setActiveObjectId(item.id);
+                        }}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setActiveObjectId(item.id);
+                        }}
+                      >
+                        <circle cx={item.x} cy={item.y} r="18" fill={style.fill} stroke={item.id === activeObjectId ? "#f59e0b" : style.stroke} strokeWidth="3" />
+                        <text x={item.x} y={item.y + 5} textAnchor="middle" fontSize="14" fontWeight="700" fill={style.text}>
+                          {item.label}
+                        </text>
+                      </g>
+                    );
+                  }
+
+                  if (item.type === "cone") {
+                    const style = getColorStyle(item.color);
+                    return (
+                      <path
+                        key={item.id}
+                        d={`M ${item.x} ${item.y - 16} L ${item.x - 14} ${item.y + 16} L ${item.x + 14} ${item.y + 16} Z`}
+                        fill={item.id === activeObjectId ? "#fb923c" : style.fill}
+                        stroke={style.stroke}
+                        strokeWidth="2"
+                        onMouseDown={(event) => {
+                          event.stopPropagation();
+                          if (tool === "select") startDragging(item.id, pointFromMouse(event));
+                          else setActiveObjectId(item.id);
+                        }}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setActiveObjectId(item.id);
+                        }}
+                      />
+                    );
+                  }
+
+                  if (item.type === "ball") {
+                    const style = getColorStyle(item.color);
+                    return (
+                      <g
+                        key={item.id}
+                        onMouseDown={(event) => {
+                          event.stopPropagation();
+                          if (tool === "select") startDragging(item.id, pointFromMouse(event));
+                          else setActiveObjectId(item.id);
+                        }}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setActiveObjectId(item.id);
+                        }}
+                      >
+                        <circle cx={item.x} cy={item.y} r="14" fill={style.fill} stroke={item.id === activeObjectId ? "#7c2d12" : style.stroke} strokeWidth="2" />
+                        <path d={`M ${item.x - 14} ${item.y} Q ${item.x} ${item.y - 6} ${item.x + 14} ${item.y}`} fill="none" stroke={style.stroke} strokeWidth="1.5" />
+                        <path d={`M ${item.x} ${item.y - 14} Q ${item.x - 5} ${item.y} ${item.x} ${item.y + 14}`} fill="none" stroke={style.stroke} strokeWidth="1.5" />
+                      </g>
+                    );
+                  }
+
+                  if (item.type === "arrow") {
+                    const stroke = item.id === activeObjectId ? "#ea580c" : getColorStyle(item.color).fill;
+                    return (
+                      <g
+                        key={item.id}
+                        onMouseDown={(event) => {
+                          event.stopPropagation();
+                          if (tool === "select") startDragging(item.id, pointFromMouse(event));
+                          else setActiveObjectId(item.id);
+                        }}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setActiveObjectId(item.id);
+                        }}
+                      >
+                        <path d={getArrowPath(item)} fill="none" stroke={stroke} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+                        <polygon points={getArrowHeadPolygon(item)} fill={stroke} />
+                      </g>
+                    );
+                  }
+
+                  if (item.type === "text") {
+                    return (
+                      <text
+                        key={item.id}
+                        x={item.x}
+                        y={item.y}
+                        fontSize="16"
+                        fontWeight="700"
+                        fill={item.id === activeObjectId ? "#c2410c" : getColorStyle(item.color).fill}
+                        onMouseDown={(event) => {
+                          event.stopPropagation();
+                          if (tool === "select") startDragging(item.id, pointFromMouse(event));
+                          else setActiveObjectId(item.id);
+                        }}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setActiveObjectId(item.id);
+                        }}
+                      >
+                        {item.text}
+                      </text>
+                    );
+                  }
+
+                  return null;
+                })}
+
+                {draftArrow ? (
+                  <>
+                    <path
+                      d={getArrowPath(draftArrow)}
+                      fill="none"
+                      stroke="#ea580c"
+                      strokeWidth="4"
+                      strokeDasharray="6 6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <polygon points={getArrowHeadPolygon(draftArrow)} fill="#ea580c" />
+                  </>
+                ) : null}
+              </svg>
             </div>
           </div>
-
-          <div className="rounded-2xl border border-slate-200 p-3">
-            <p className="text-sm font-medium text-slate-800">Selected slide</p>
-            <input
-              value={activeSlide.name}
-              onChange={(event) => updateSlideName(event.target.value)}
-              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            />
-            <div className="mt-2 flex gap-2">
-              {(["half_court", "full_court"] as const).map((courtType) => (
-                <button
-                  key={courtType}
-                  type="button"
-                  onClick={() => updateCourtType(courtType)}
-                  className={`rounded-lg px-3 py-2 text-xs ${activeSlide.courtType === courtType ? "bg-slate-900 text-white" : "border border-slate-200 bg-white text-slate-700"}`}
-                >
-                  {courtType === "half_court" ? "Half court" : "Full court"}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 p-3">
-            <p className="text-sm font-medium text-slate-800">Selected item</p>
-            {!activeObject && <p className="mt-2 text-sm text-slate-500">Nothing selected.</p>}
-            {activeObject?.type === "player" && (
-              <input value={activeObject.label} onChange={(event) => updateActiveLabel(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-            )}
-            {activeObject?.type === "text" && (
-              <input value={activeObject.text} onChange={(event) => updateActiveLabel(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-            )}
-            {activeObject && (
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <button type="button" onClick={duplicateActiveObject} className="rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-700">
-                  Duplicate
-                </button>
-                <button type="button" onClick={deleteActiveObject} className="rounded-lg border border-red-200 px-3 py-2 text-xs text-red-700">
-                  Delete
-                </button>
-              </div>
-            )}
-          </div>
-
-          <button type="button" disabled={isSaving} onClick={saveDiagram} className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-medium text-white disabled:opacity-60">
-            {isSaving ? "Saving..." : "Save drill diagram"}
-          </button>
-          {saveMessage ? <p className="text-sm text-slate-600">{saveMessage}</p> : null}
         </div>
-      </div>
 
-      <div className="rounded-3xl border border-slate-200 bg-white p-4">
-        <svg
-          ref={svgRef}
-          viewBox={`0 0 ${boardWidth} ${boardHeight}`}
-          className="w-full rounded-2xl bg-[var(--court-board-bg)]"
-          onMouseDown={onBoardMouseDown}
-          onMouseMove={onBoardMouseMove}
-          onMouseUp={onBoardMouseUp}
-          onMouseLeave={onBoardMouseUp}
-        >
-          <CourtDefs />
-          {activeSlide.courtType === "full_court" ? <FullCourtShape /> : <HalfCourtShape />}
+        <aside className="border-l border-slate-200 bg-white p-6">
+          <div className="space-y-8">
+            <section>
+              <p className="text-sm font-extrabold uppercase tracking-[0.08em] text-slate-800">Add Actions</p>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <button type="button" onClick={() => { setTool("curvedArrow"); setActiveItemColor("yellow"); }} className="rounded-xl bg-slate-700 px-4 py-3 text-sm font-semibold text-white">Dribble</button>
+                <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("white"); }} className="rounded-xl bg-slate-700 px-4 py-3 text-sm font-semibold text-white">Pass</button>
+                <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("green"); }} className="rounded-xl bg-slate-700 px-4 py-3 text-sm font-semibold text-white">Cut</button>
+                <button type="button" onClick={() => { setTool("text"); setTextTemplate("SCREEN"); setActiveItemColor("blue"); }} className="rounded-xl bg-slate-700 px-4 py-3 text-sm font-semibold text-white">Screen</button>
+                <button type="button" onClick={() => { setTool("text"); setTextTemplate("SHOT"); setActiveItemColor("red"); }} className="rounded-xl bg-slate-700 px-4 py-3 text-sm font-semibold text-white">Shot</button>
+                <button type="button" onClick={() => { setTool("text"); setTextTemplate("HO"); setActiveItemColor("green"); }} className="rounded-xl bg-slate-700 px-4 py-3 text-sm font-semibold text-white">Handoff</button>
+              </div>
+            </section>
 
-          {activeSlide.objects.map((item) => {
-            if (item.type === "player") {
-              const style = getColorStyle(item.color);
-              return (
-                <g
-                  key={item.id}
-                  onMouseDown={(event) => {
-                    event.stopPropagation();
-                    if (tool === "select") startDragging(item.id, pointFromMouse(event));
-                    else setActiveObjectId(item.id);
-                  }}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setActiveObjectId(item.id);
-                  }}
-                >
-                  <circle cx={item.x} cy={item.y} r="18" fill={style.fill} stroke={item.id === activeObjectId ? "#f59e0b" : style.stroke} strokeWidth="3" />
-                  <text x={item.x} y={item.y + 5} textAnchor="middle" fontSize="14" fontWeight="700" fill={style.text}>
-                    {item.label}
-                  </text>
-                </g>
-              );
-            }
+            <section>
+              <p className="text-sm font-extrabold uppercase tracking-[0.08em] text-slate-800">Add Players</p>
+              <div className="mt-4 grid grid-cols-6 gap-3">
+                {["1", "2", "3", "4", "5", "?"].map((label) => (
+                  <button key={label} type="button" onClick={() => placeLabeledPlayer(label, "white")} className="aspect-square rounded-full border-2 border-slate-500 text-sm font-bold text-slate-800">
+                    {label}
+                  </button>
+                ))}
+                {["X1", "X2", "X3", "X4", "X5", "X?"].map((label) => (
+                  <button key={label} type="button" onClick={() => placeLabeledPlayer(label, "blue")} className="rounded-xl border border-slate-300 bg-slate-50 px-2 py-3 text-sm font-semibold text-slate-700">
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </section>
 
-            if (item.type === "cone") {
-              const style = getColorStyle(item.color);
-              return (
-                <path
-                  key={item.id}
-                  d={`M ${item.x} ${item.y - 16} L ${item.x - 14} ${item.y + 16} L ${item.x + 14} ${item.y + 16} Z`}
-                  fill={item.id === activeObjectId ? "#fb923c" : style.fill}
-                  stroke={style.stroke}
-                  strokeWidth="2"
-                  onMouseDown={(event) => {
-                    event.stopPropagation();
-                    if (tool === "select") startDragging(item.id, pointFromMouse(event));
-                    else setActiveObjectId(item.id);
-                  }}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setActiveObjectId(item.id);
-                  }}
-                />
-              );
-            }
+            <section>
+              <p className="text-sm font-extrabold uppercase tracking-[0.08em] text-slate-800">Add Misc</p>
+              <div className="mt-4 grid grid-cols-4 gap-3">
+                <button type="button" onClick={() => placePresetObject("ball")} className="flex aspect-square items-center justify-center rounded-xl border border-slate-300 text-slate-700"><CircleDot size={18} /></button>
+                <button type="button" onClick={() => placePresetObject("cone")} className="flex aspect-square items-center justify-center rounded-xl border border-slate-300 text-slate-700"><Cone size={18} /></button>
+                <button type="button" onClick={() => { setTool("text"); setTextTemplate("Note"); }} className="flex aspect-square items-center justify-center rounded-xl border border-slate-300 text-slate-700"><StickyNote size={18} /></button>
+                <button type="button" onClick={() => setTool("select")} className="flex aspect-square items-center justify-center rounded-xl border border-slate-300 text-slate-700"><Users size={18} /></button>
+                <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("white"); }} className="flex aspect-square items-center justify-center rounded-xl border border-slate-300 text-slate-700"><MoveRight size={18} /></button>
+                <button type="button" onClick={() => { setTool("curvedArrow"); setActiveItemColor("yellow"); }} className="flex aspect-square items-center justify-center rounded-xl border border-slate-300 text-slate-700"><Spline size={18} /></button>
+                <button type="button" onClick={() => setTool("player")} className="flex aspect-square items-center justify-center rounded-xl border border-slate-300 text-slate-700"><PenLine size={18} /></button>
+                <button type="button" onClick={() => setPanelTab("objects")} className="flex aspect-square items-center justify-center rounded-xl border border-slate-300 text-slate-700"><ClipboardList size={18} /></button>
+              </div>
+            </section>
 
-            if (item.type === "ball") {
-              const style = getColorStyle(item.color);
-              return (
-                <g
-                  key={item.id}
-                  onMouseDown={(event) => {
-                    event.stopPropagation();
-                    if (tool === "select") startDragging(item.id, pointFromMouse(event));
-                    else setActiveObjectId(item.id);
-                  }}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setActiveObjectId(item.id);
-                  }}
-                >
-                  <circle cx={item.x} cy={item.y} r="14" fill={style.fill} stroke={item.id === activeObjectId ? "#7c2d12" : style.stroke} strokeWidth="2" />
-                  <path d={`M ${item.x - 14} ${item.y} Q ${item.x} ${item.y - 6} ${item.x + 14} ${item.y}`} fill="none" stroke={style.stroke} strokeWidth="1.5" />
-                  <path d={`M ${item.x} ${item.y - 14} Q ${item.x - 5} ${item.y} ${item.x} ${item.y + 14}`} fill="none" stroke={style.stroke} strokeWidth="1.5" />
-                </g>
-              );
-            }
-
-            if (item.type === "arrow") {
-              const stroke = item.id === activeObjectId ? "#ea580c" : getColorStyle(item.color).fill;
-              return (
-                <g
-                  key={item.id}
-                  onMouseDown={(event) => {
-                    event.stopPropagation();
-                    if (tool === "select") startDragging(item.id, pointFromMouse(event));
-                    else setActiveObjectId(item.id);
-                  }}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setActiveObjectId(item.id);
-                  }}
-                >
-                  <path d={getArrowPath(item)} fill="none" stroke={stroke} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-                  <polygon points={getArrowHeadPolygon(item)} fill={stroke} />
-                </g>
-              );
-            }
-
-            if (item.type === "text") {
-              return (
-                <text
-                  key={item.id}
-                  x={item.x}
-                  y={item.y}
-                  fontSize="16"
-                  fontWeight="700"
-                  fill={item.id === activeObjectId ? "#c2410c" : getColorStyle(item.color).fill}
-                  onMouseDown={(event) => {
-                    event.stopPropagation();
-                    if (tool === "select") startDragging(item.id, pointFromMouse(event));
-                    else setActiveObjectId(item.id);
-                  }}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setActiveObjectId(item.id);
-                  }}
-                >
-                  {item.text}
-                </text>
-              );
-            }
-
-            return null;
-          })}
-
-          {draftArrow ? (
-            <>
-              <path
-                d={getArrowPath(draftArrow)}
-                fill="none"
-                stroke="#ea580c"
-                strokeWidth="4"
-                strokeDasharray="6 6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <polygon points={getArrowHeadPolygon(draftArrow)} fill="#ea580c" />
-            </>
-          ) : null}
-        </svg>
+            <section>
+              <p className="text-sm font-extrabold uppercase tracking-[0.08em] text-slate-800">Selected Item</p>
+              <div className="mt-4 space-y-3 rounded-2xl bg-slate-50 p-4">
+                {!activeObject ? <p className="text-sm text-slate-500">Select an item on the board.</p> : null}
+                {activeObject?.type === "player" ? (
+                  <input value={activeObject.label} onChange={(event) => updateActiveLabel(event.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+                ) : null}
+                {activeObject?.type === "text" ? (
+                  <input value={activeObject.text} onChange={(event) => updateActiveLabel(event.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+                ) : null}
+                <div className="flex flex-wrap gap-2">
+                  {diagramColors.map((color) => {
+                    const style = getColorStyle(color);
+                    return (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => {
+                          setActiveItemColor(color);
+                          updateActiveObjectColor(color);
+                        }}
+                        className={`h-8 w-8 rounded-full border-2 ${activeItemColor === color ? "border-slate-900" : "border-slate-200"}`}
+                        style={{ backgroundColor: style.fill }}
+                      />
+                    );
+                  })}
+                </div>
+                {activeObject ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <button type="button" onClick={duplicateActiveObject} className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700">Clone</button>
+                    <button type="button" onClick={deleteActiveObject} className="rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-700">Delete</button>
+                  </div>
+                ) : null}
+                {saveMessage ? <p className="text-sm text-slate-500">{saveMessage}</p> : null}
+              </div>
+            </section>
+          </div>
+        </aside>
       </div>
     </div>
   );
