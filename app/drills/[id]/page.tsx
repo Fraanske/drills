@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DiagramEditor } from "@/components/diagram-editor";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
@@ -36,6 +37,13 @@ export default async function DrillDetailPage({ params }: { params: Promise<{ id
     <main className="min-h-screen bg-slate-50 px-6 py-10">
       <div className="mx-auto max-w-7xl space-y-8">
         <header className="rounded-3xl bg-white p-8 shadow-sm">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
+          >
+            <span aria-hidden="true">←</span>
+            Back to drill library
+          </Link>
           <p className="text-sm text-slate-500">Drill id: {id}</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">{typedDrill.title}</h1>
           <p className="mt-3 max-w-3xl text-slate-600">
