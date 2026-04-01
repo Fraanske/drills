@@ -36,18 +36,26 @@ export default async function DrillDetailPage({ params }: { params: Promise<{ id
 
   return (
     <main className="min-h-screen bg-slate-50 px-3 py-4 lg:px-4">
-      <div className="mx-auto max-w-[1680px] space-y-4">
+      <div className="mx-auto max-w-[1820px] space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
+          >
+            <span aria-hidden="true">←</span>
+            Back to drill library
+          </Link>
+          <span className="hidden text-xs text-slate-400 lg:inline">Drill id: {id}</span>
+        </div>
+        <DiagramEditor initialDiagram={initialDiagram} drillId={id} />
+
         <form action={updateDrillAction} className="rounded-3xl bg-white p-4 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
-            >
-              <span aria-hidden="true">←</span>
-              Back to drill library
-            </Link>
-            <div className="flex items-center gap-2">
-              <span className="hidden text-xs text-slate-400 lg:inline">Drill id: {id}</span>
+          <details>
+            <summary className="cursor-pointer list-none text-sm font-semibold text-slate-700">
+              Drill details and save
+            </summary>
+
+            <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
               <button
                 type="submit"
                 className="rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700"
@@ -55,49 +63,44 @@ export default async function DrillDetailPage({ params }: { params: Promise<{ id
                 Save drill
               </button>
             </div>
-          </div>
 
-          <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.4fr),minmax(0,1fr),160px,160px]">
-            <InlineField label="Title" name="title" defaultValue={typedDrill.title} placeholder="New drill" />
-            <InlineField
-              label="One-liner"
-              name="one_liner"
-              defaultValue={typedDrill.one_liner}
-              placeholder="transition passing | 6 players | full court"
-            />
-            <InlineField
-              label="Players"
-              name="players_needed"
-              defaultValue={typedDrill.players_needed ?? ""}
-              placeholder="6"
-            />
-            <InlineField
-              label="Age"
-              name="age_group"
-              defaultValue={typedDrill.age_group ?? ""}
-              placeholder="U14+"
-            />
-          </div>
+            <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.4fr),minmax(0,1fr),160px,160px]">
+              <InlineField label="Title" name="title" defaultValue={typedDrill.title} placeholder="New drill" />
+              <InlineField
+                label="One-liner"
+                name="one_liner"
+                defaultValue={typedDrill.one_liner}
+                placeholder="transition passing | 6 players | full court"
+              />
+              <InlineField
+                label="Players"
+                name="players_needed"
+                defaultValue={typedDrill.players_needed ?? ""}
+                placeholder="6"
+              />
+              <InlineField
+                label="Age"
+                name="age_group"
+                defaultValue={typedDrill.age_group ?? ""}
+                placeholder="U14+"
+              />
+            </div>
 
-          <div className="mt-3 grid gap-3 xl:grid-cols-[220px,1fr]">
-            <CompactSelectField label="Court" name="court_area" defaultValue={typedDrill.court_area}>
-              <option value="half_court">Half court</option>
-              <option value="full_court">Full court</option>
-              <option value="small_side">Small side</option>
-            </CompactSelectField>
-            <InlineField
-              label="Summary"
-              name="explanation"
-              defaultValue={typedDrill.explanation}
-              placeholder="Short explanation of the drill"
-            />
-          </div>
+            <div className="mt-3 grid gap-3 xl:grid-cols-[220px,1fr]">
+              <CompactSelectField label="Court" name="court_area" defaultValue={typedDrill.court_area}>
+                <option value="half_court">Half court</option>
+                <option value="full_court">Full court</option>
+                <option value="small_side">Small side</option>
+              </CompactSelectField>
+              <InlineField
+                label="Summary"
+                name="explanation"
+                defaultValue={typedDrill.explanation}
+                placeholder="Short explanation of the drill"
+              />
+            </div>
 
-          <details className="mt-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-            <summary className="cursor-pointer list-none text-sm font-semibold text-slate-700">
-              More drill details
-            </summary>
-            <div className="mt-4 grid gap-3 xl:grid-cols-2">
+            <div className="mt-3 grid gap-3 xl:grid-cols-2">
               <TextAreaField label="Setup" name="setup" defaultValue={typedDrill.setup} rows={3} />
               <TextAreaField label="Flow steps" name="flow_steps" defaultValue={typedDrill.flow_steps} rows={3} />
               <TextAreaField label="Coaching points" name="coaching_points" defaultValue={typedDrill.coaching_points} rows={3} />
@@ -105,8 +108,6 @@ export default async function DrillDetailPage({ params }: { params: Promise<{ id
             </div>
           </details>
         </form>
-
-        <DiagramEditor initialDiagram={initialDiagram} drillId={id} />
       </div>
     </main>
   );

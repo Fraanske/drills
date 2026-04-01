@@ -755,6 +755,8 @@ export function DiagramEditor({
 
   return (
     <div className="overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-x-auto">
+        <div className="min-w-[1500px]">
       <div className="flex items-center gap-4 bg-[#109c92] px-5 py-4 text-white">
         <button
           type="button"
@@ -803,7 +805,7 @@ export function DiagramEditor({
         </div>
       </div>
 
-      <div className="grid lg:min-h-[820px] lg:grid-cols-[248px,minmax(0,1fr),398px]">
+      <div className="grid min-h-[820px] grid-cols-[248px,minmax(0,1fr),398px]">
         <aside className="border-r border-slate-200 bg-white">
           <div className="flex border-b border-slate-200">
             <button
@@ -1158,6 +1160,8 @@ export function DiagramEditor({
             </section>
           </div>
         </aside>
+      </div>
+        </div>
       </div>
     </div>
   );
