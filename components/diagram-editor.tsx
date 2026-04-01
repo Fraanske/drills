@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { DiagramObject, DiagramPayload, DiagramSlide, PlayerColor } from "@/lib/types";
 import { createEmptySlide } from "@/lib/diagram";
 
@@ -387,6 +387,45 @@ export function DiagramEditor({
 
     setSaveMessage("Diagram saved.");
   }
+
+  useEffect(() => {
+    function isTypingTarget(target: EventTarget | null) {
+      if (!(target instanceof HTMLElement)) return false;
+      const tagName = target.tagName.toLowerCase();
+      return tagName === "input" || tagName === "textarea" || target.isContentEditable;
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (isTypingTarget(event.target)) return;
+
+      const key = event.key.toLowerCase();
+      const modifier = event.ctrlKey || event.metaKey;
+
+      if (key === "delete" || key === "backspace") {
+        if (activeObjectId) {
+          event.preventDefault();
+          deleteActiveObject();
+        }
+        return;
+      }
+
+      if (!modifier) return;
+
+      if (key === "z" && !event.shiftKey) {
+        event.preventDefault();
+        undo();
+        return;
+      }
+
+      if ((key === "z" && event.shiftKey) || key === "y") {
+        event.preventDefault();
+        redo();
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [activeObjectId, history.length, future.length, diagram]);
 
   if (!activeSlide) return null;
 
