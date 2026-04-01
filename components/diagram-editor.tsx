@@ -825,8 +825,7 @@ export function DiagramEditor({
                         key={item.id}
                         onMouseDown={(event) => {
                           event.stopPropagation();
-                          if (tool === "select") startDragging(item.id, pointFromMouse(event));
-                          else setActiveObjectId(item.id);
+                          startDragging(item.id, pointFromMouse(event));
                         }}
                         onClick={(event) => {
                           event.stopPropagation();
@@ -852,8 +851,7 @@ export function DiagramEditor({
                         strokeWidth="2"
                         onMouseDown={(event) => {
                           event.stopPropagation();
-                          if (tool === "select") startDragging(item.id, pointFromMouse(event));
-                          else setActiveObjectId(item.id);
+                          startDragging(item.id, pointFromMouse(event));
                         }}
                         onClick={(event) => {
                           event.stopPropagation();
@@ -870,8 +868,7 @@ export function DiagramEditor({
                         key={item.id}
                         onMouseDown={(event) => {
                           event.stopPropagation();
-                          if (tool === "select") startDragging(item.id, pointFromMouse(event));
-                          else setActiveObjectId(item.id);
+                          startDragging(item.id, pointFromMouse(event));
                         }}
                         onClick={(event) => {
                           event.stopPropagation();
@@ -892,8 +889,7 @@ export function DiagramEditor({
                         key={item.id}
                         onMouseDown={(event) => {
                           event.stopPropagation();
-                          if (tool === "select") startDragging(item.id, pointFromMouse(event));
-                          else setActiveObjectId(item.id);
+                          startDragging(item.id, pointFromMouse(event));
                         }}
                         onClick={(event) => {
                           event.stopPropagation();
@@ -917,8 +913,7 @@ export function DiagramEditor({
                         fill={item.id === activeObjectId ? "#c2410c" : getColorStyle(item.color).fill}
                         onMouseDown={(event) => {
                           event.stopPropagation();
-                          if (tool === "select") startDragging(item.id, pointFromMouse(event));
-                          else setActiveObjectId(item.id);
+                          startDragging(item.id, pointFromMouse(event));
                         }}
                         onClick={(event) => {
                           event.stopPropagation();
