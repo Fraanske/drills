@@ -803,7 +803,7 @@ export function DiagramEditor({
         </div>
       </div>
 
-      <div className="grid min-h-[820px] grid-cols-[132px,minmax(0,1fr),340px]">
+      <div className="grid min-h-[820px] grid-cols-[116px_minmax(0,_1fr)_304px]">
         <aside className="border-r border-slate-200 bg-white">
           <div className="border-b border-slate-200 px-4 py-4">
             <p className="text-base font-medium text-slate-900">Phases</p>

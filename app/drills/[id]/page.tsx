@@ -64,7 +64,7 @@ export default async function DrillDetailPage({ params }: { params: Promise<{ id
               </button>
             </div>
 
-            <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.4fr),minmax(0,1fr),160px,160px]">
+            <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,_1.4fr)_minmax(0,_1fr)_160px_160px]">
               <InlineField label="Title" name="title" defaultValue={typedDrill.title} placeholder="New drill" />
               <InlineField
                 label="One-liner"
@@ -86,7 +86,7 @@ export default async function DrillDetailPage({ params }: { params: Promise<{ id
               />
             </div>
 
-            <div className="mt-3 grid gap-3 xl:grid-cols-[220px,1fr]">
+            <div className="mt-3 grid gap-3 xl:grid-cols-[220px_1fr]">
               <CompactSelectField label="Court" name="court_area" defaultValue={typedDrill.court_area}>
                 <option value="half_court">Half court</option>
                 <option value="full_court">Full court</option>

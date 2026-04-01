@@ -105,7 +105,7 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="mt-10 grid gap-8 lg:grid-cols-[360px,1fr]">
+        <div className="mt-10 grid gap-8 lg:grid-cols-[360px_1fr]">
           <aside className="space-y-6">
             <div className="rounded-[1.9rem] border border-white/80 bg-white/82 p-6 shadow-[0_22px_60px_rgba(7,58,103,0.08)] backdrop-blur">
               <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#0c6cb5]">Quick add</p>
