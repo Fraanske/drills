@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { createDrill } from "@/app/actions";
 import { signOut } from "@/app/(auth)/sign-in/actions";
 import { DrillList } from "@/components/drill-list";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
@@ -71,6 +72,13 @@ export default async function HomePage() {
                 )}
 
                 <div className="mt-3 flex flex-wrap gap-3 lg:justify-end">
+                  {user ? (
+                    <form action={createDrill}>
+                      <button type="submit" className="rounded-2xl border border-[#ffd21f]/45 bg-[#ffd21f]/12 px-5 py-3 text-sm font-semibold text-[#fff1a6] transition hover:bg-[#ffd21f]/20">
+                        New drill
+                      </button>
+                    </form>
+                  ) : null}
                   {primaryDrill ? (
                     <Link href={`/drills/${primaryDrill.id}`} className="rounded-2xl bg-[#ffd21f] px-5 py-3 text-sm font-bold text-[#052b4b] shadow-[0_14px_30px_rgba(255,210,31,0.25)] transition hover:-translate-y-0.5 hover:bg-[#ffe065]">
                       Open latest drill
@@ -110,12 +118,21 @@ export default async function HomePage() {
               </div>
             </div>
             <div className="rounded-[1.9rem] border border-white/80 bg-white/82 p-6 shadow-[0_22px_60px_rgba(7,58,103,0.08)] backdrop-blur">
-              <h2 className="text-xl font-black tracking-tight text-[#052b4b]">Drill library</h2>
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="text-xl font-black tracking-tight text-[#052b4b]">Drill library</h2>
+                {user ? (
+                  <form action={createDrill}>
+                    <button type="submit" className="rounded-full bg-[#073a67] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0c6cb5]">
+                      + Create drill
+                    </button>
+                  </form>
+                ) : null}
+              </div>
               <div className="mt-4">
                 {!user ? (
                   <p className="text-sm text-slate-600">Sign in to load your drills from Supabase.</p>
                 ) : drills.length === 0 ? (
-                  <p className="text-sm text-slate-600">No drills found yet. Add your first drill in Supabase or the app later.</p>
+                  <p className="text-sm text-slate-600">No drills found yet. Create your first drill to start building your library.</p>
                 ) : (
                   <>
                     <div className="mb-4 flex items-center justify-between rounded-2xl bg-[#f4fbff] px-4 py-3 text-sm">
