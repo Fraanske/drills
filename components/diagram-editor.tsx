@@ -125,12 +125,28 @@ type CourtModel = {
   height: number;
   xScale: number;
   yScale: number;
+  circleScale: number;
   mapX: (meters: number) => number;
   mapY: (meters: number) => number;
 };
 
 function getHalfArcPath(centerX: number, centerY: number, radiusX: number, radiusY: number, sweepFlag: 0 | 1) {
   return `M ${centerX - radiusX} ${centerY} A ${radiusX} ${radiusY} 0 0 ${sweepFlag} ${centerX + radiusX} ${centerY}`;
+}
+
+function getArcBetweenPoints(
+  centerX: number,
+  centerY: number,
+  radius: number,
+  startX: number,
+  endX: number,
+  orientation: BasketOrientation,
+) {
+  const dx = Math.abs(startX - centerX);
+  const dy = Math.sqrt(Math.max(0, radius * radius - dx * dx));
+  const y = orientation === "top" ? centerY + dy : centerY - dy;
+  const sweepFlag: 0 | 1 = orientation === "top" ? 1 : 0;
+  return `M ${startX} ${y} A ${radius} ${radius} 0 0 ${sweepFlag} ${endX} ${y}`;
 }
 
 function createFullCourtModel(): CourtModel {
@@ -150,6 +166,7 @@ function createFullCourtModel(): CourtModel {
     height,
     xScale,
     yScale,
+    circleScale: xScale,
     mapX: (meters) => left + meters * xScale,
     mapY: (meters) => top + meters * yScale,
   };
@@ -172,6 +189,7 @@ function createHalfCourtModel(): CourtModel {
     height,
     xScale,
     yScale,
+    circleScale: xScale,
     mapX: (meters) => left + meters * xScale,
     mapY: (meters) => top + meters * yScale,
   };
@@ -222,6 +240,7 @@ function BasketEnd({
   const keyTop = Math.min(baselineY, freeThrowY);
   const keyHeight = Math.abs(freeThrowY - baselineY);
   const laneMarkLength = 10;
+  const circleRadius = model.circleScale;
   const restrictedStubY = model.mapY(
     baselineMeters + direction * (courtLayout.hoopCenterFromBaselineM + courtLayout.restrictedStubM),
   );
@@ -241,8 +260,8 @@ function BasketEnd({
         d={getHalfArcPath(
           centerX,
           freeThrowY,
-          courtLayout.freeThrowCircleRadiusM * model.xScale,
-          courtLayout.freeThrowCircleRadiusM * model.yScale,
+          courtLayout.freeThrowCircleRadiusM * circleRadius,
+          courtLayout.freeThrowCircleRadiusM * circleRadius,
           courtSweep,
         )}
         fill="none"
@@ -253,8 +272,8 @@ function BasketEnd({
         d={getHalfArcPath(
           centerX,
           freeThrowY,
-          courtLayout.freeThrowCircleRadiusM * model.xScale,
-          courtLayout.freeThrowCircleRadiusM * model.yScale,
+          courtLayout.freeThrowCircleRadiusM * circleRadius,
+          courtLayout.freeThrowCircleRadiusM * circleRadius,
           basketSweep,
         )}
         fill="none"
@@ -273,24 +292,24 @@ function BasketEnd({
       <ellipse
         cx={centerX}
         cy={hoopY}
-        rx={courtLayout.hoopRadiusM * model.xScale}
-        ry={courtLayout.hoopRadiusM * model.yScale}
+        rx={courtLayout.hoopRadiusM * circleRadius}
+        ry={courtLayout.hoopRadiusM * circleRadius}
         fill="none"
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
       />
       <line
-        x1={centerX - courtLayout.restrictedRadiusM * model.xScale}
+        x1={centerX - courtLayout.restrictedRadiusM * circleRadius}
         y1={hoopY}
-        x2={centerX - courtLayout.restrictedRadiusM * model.xScale}
+        x2={centerX - courtLayout.restrictedRadiusM * circleRadius}
         y2={restrictedStubY}
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
       />
       <line
-        x1={centerX + courtLayout.restrictedRadiusM * model.xScale}
+        x1={centerX + courtLayout.restrictedRadiusM * circleRadius}
         y1={hoopY}
-        x2={centerX + courtLayout.restrictedRadiusM * model.xScale}
+        x2={centerX + courtLayout.restrictedRadiusM * circleRadius}
         y2={restrictedStubY}
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
@@ -299,8 +318,8 @@ function BasketEnd({
         d={getHalfArcPath(
           centerX,
           hoopY,
-          courtLayout.restrictedRadiusM * model.xScale,
-          courtLayout.restrictedRadiusM * model.yScale,
+          courtLayout.restrictedRadiusM * circleRadius,
+          courtLayout.restrictedRadiusM * circleRadius,
           courtSweep,
         )}
         fill="none"
@@ -310,7 +329,14 @@ function BasketEnd({
       <line x1={threeLeftX} y1={baselineY} x2={threeLeftX} y2={threeBreakY} stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
       <line x1={threeRightX} y1={baselineY} x2={threeRightX} y2={threeBreakY} stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
       <path
-        d={`M ${threeLeftX} ${threeBreakY} A ${courtLayout.threePointRadiusM * model.xScale} ${courtLayout.threePointRadiusM * model.yScale} 0 0 ${courtSweep} ${threeRightX} ${threeBreakY}`}
+        d={getArcBetweenPoints(
+          centerX,
+          hoopY,
+          courtLayout.threePointRadiusM * circleRadius,
+          threeLeftX,
+          threeRightX,
+          orientation,
+        )}
         fill="none"
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
@@ -346,8 +372,8 @@ function HalfCourtShape() {
         d={getHalfArcPath(
           model.mapX(courtLayout.courtWidthM / 2),
           model.mapY(0),
-          courtLayout.centerCircleRadiusM * model.xScale,
-          courtLayout.centerCircleRadiusM * model.yScale,
+          courtLayout.centerCircleRadiusM * model.circleScale,
+          courtLayout.centerCircleRadiusM * model.circleScale,
           1,
         )}
         fill="none"
@@ -378,7 +404,7 @@ function FullCourtShape() {
       <circle
         cx={model.mapX(courtLayout.courtWidthM / 2)}
         cy={model.mapY(courtLayout.fullCourtLengthM / 2)}
-        r={courtLayout.centerCircleRadiusM * model.xScale}
+        r={courtLayout.centerCircleRadiusM * model.circleScale}
         fill="var(--court-paint-fill)"
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
