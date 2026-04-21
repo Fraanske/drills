@@ -185,8 +185,8 @@ function createFullCourtModel(): CourtModel {
 }
 
 function createHalfCourtModel(): CourtModel {
-  const availableWidth = boardWidth - courtLayout.insetX * 2;
-  const availableHeight = boardHeight - courtLayout.insetY * 2;
+  const availableWidth = boardWidth - 36;
+  const availableHeight = boardHeight - 340;
   const scale = Math.min(
     availableWidth / courtLayout.courtWidthM,
     availableHeight / courtLayout.halfCourtLengthM,
@@ -194,7 +194,7 @@ function createHalfCourtModel(): CourtModel {
   const width = courtLayout.courtWidthM * scale;
   const height = courtLayout.halfCourtLengthM * scale;
   const left = (boardWidth - width) / 2;
-  const top = (boardHeight - height) / 2;
+  const top = boardHeight - height - 92;
   const xScale = scale;
   const yScale = scale;
 
@@ -392,7 +392,7 @@ function HalfCourtShape() {
           model.mapY(0),
           courtLayout.centerCircleRadiusM * model.circleScale,
           courtLayout.centerCircleRadiusM * model.circleScale,
-          1,
+          0,
         )}
         fill="none"
         stroke="var(--court-marking)"
@@ -1078,7 +1078,10 @@ export function DiagramEditor({
                     className={`w-full rounded-xl border p-2 text-left transition ${slide.id === activeSlide.id ? "border-[#1d8fff] shadow-[inset_0_0_0_2px_#1d8fff]" : "border-slate-200 hover:border-slate-300"}`}
                   >
                     <div className="rounded-lg bg-[#f4e3c4] p-1">
-                      <svg viewBox={`0 0 ${boardWidth} ${boardHeight}`} className="h-36 w-full rounded-lg bg-[#f0d5a9]">
+                      <svg
+                        viewBox={`0 0 ${boardWidth} ${boardHeight}`}
+                        className={`w-full rounded-lg bg-[#f0d5a9] ${slide.courtType === "full_court" ? "h-36" : "h-24"}`}
+                      >
                         <CourtDefs />
                         {slide.courtType === "full_court" ? <FullCourtShape /> : <HalfCourtShape />}
                       </svg>
@@ -1107,13 +1110,13 @@ export function DiagramEditor({
         </aside>
 
         <div className="bg-[#eef2f7] px-6 py-6">
-          <div className="mx-auto flex h-full max-w-[620px] items-center justify-center">
+          <div className={`mx-auto flex h-full items-center justify-center ${activeSlide.courtType === "full_court" ? "max-w-[620px]" : "max-w-[920px]"}`}>
             <div className="w-full rounded-[1.5rem] bg-[#e8edf3] p-5">
               <div className="rounded-[1.25rem] bg-[#f0d5a9] p-4 shadow-inner">
               <svg
                 ref={svgRef}
                 viewBox={`0 0 ${boardWidth} ${boardHeight}`}
-                className="mx-auto aspect-[13/23] w-full max-w-[520px] rounded-[1rem] bg-[#f0d5a9]"
+                className={`mx-auto w-full rounded-[1rem] bg-[#f0d5a9] ${activeSlide.courtType === "full_court" ? "aspect-[13/23] max-w-[520px]" : "aspect-[5/4] max-w-[920px]"}`}
                 onMouseDown={onBoardMouseDown}
                 onMouseMove={onBoardMouseMove}
                 onMouseUp={onBoardMouseUp}
