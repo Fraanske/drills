@@ -385,25 +385,25 @@ function HalfCourtShape() {
       <CourtSurface model={model} />
       <line
         x1={model.left}
-        y1={model.mapY(0)}
+        y1={model.mapY(courtLayout.halfCourtLengthM)}
         x2={model.right}
-        y2={model.mapY(0)}
+        y2={model.mapY(courtLayout.halfCourtLengthM)}
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
       />
       <path
         d={getHalfArcPath(
           model.mapX(courtLayout.courtWidthM / 2),
-          model.mapY(0),
+          model.mapY(courtLayout.halfCourtLengthM),
           courtLayout.centerCircleRadiusM * model.circleScale,
           courtLayout.centerCircleRadiusM * model.circleScale,
-          0,
+          1,
         )}
         fill="none"
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
       />
-      <BasketEnd model={model} baselineMeters={courtLayout.halfCourtLengthM} orientation="bottom" />
+      <BasketEnd model={model} baselineMeters={0} orientation="top" />
     </>
   );
 }
@@ -568,12 +568,12 @@ export function DiagramEditor({
 
   function getPresetPoint(index: number) {
     const halfCourtPresets: Point[] = [
-      { x: 460, y: 430 },
-      { x: 360, y: 390 },
-      { x: 560, y: 390 },
-      { x: 320, y: 325 },
-      { x: 600, y: 325 },
-      { x: 460, y: 250 },
+      { x: 460, y: 90 },
+      { x: 360, y: 130 },
+      { x: 560, y: 130 },
+      { x: 320, y: 195 },
+      { x: 600, y: 195 },
+      { x: 460, y: 270 },
     ];
     const fullCourtPresets: Point[] = [
       { x: 260, y: 780 },
@@ -890,14 +890,14 @@ export function DiagramEditor({
             { id: uid(), type: "text", x: 290, y: 860, text: "Transition", color: "blue" },
           ]
         : [
-            { id: uid(), type: "player", x: 460, y: 430, label: "1", color: "white" },
-            { id: uid(), type: "player", x: 360, y: 390, label: "2", color: "white" },
-            { id: uid(), type: "player", x: 560, y: 390, label: "3", color: "white" },
-            { id: uid(), type: "player", x: 320, y: 330, label: "4", color: "white" },
-            { id: uid(), type: "player", x: 600, y: 330, label: "5", color: "white" },
-            { id: uid(), type: "arrow", style: "curved", x1: 460, y1: 430, x2: 375, y2: 325, cx: 405, cy: 385, color: "yellow" },
-            { id: uid(), type: "arrow", style: "straight", x1: 560, y1: 390, x2: 460, y2: 250, color: "green" },
-            { id: uid(), type: "cone", x: 460, y: 225, color: "red" },
+            { id: uid(), type: "player", x: 460, y: 90, label: "1", color: "white" },
+            { id: uid(), type: "player", x: 360, y: 130, label: "2", color: "white" },
+            { id: uid(), type: "player", x: 560, y: 130, label: "3", color: "white" },
+            { id: uid(), type: "player", x: 320, y: 190, label: "4", color: "white" },
+            { id: uid(), type: "player", x: 600, y: 190, label: "5", color: "white" },
+            { id: uid(), type: "arrow", style: "curved", x1: 460, y1: 90, x2: 375, y2: 195, cx: 405, cy: 135, color: "yellow" },
+            { id: uid(), type: "arrow", style: "straight", x1: 560, y1: 130, x2: 460, y2: 270, color: "green" },
+            { id: uid(), type: "cone", x: 460, y: 295, color: "red" },
           ];
 
     setActiveSlideObjects(() => sampleObjects);
