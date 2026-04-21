@@ -113,6 +113,17 @@ function CourtDefs() {
   );
 }
 
+function BallButtonIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M3 12h18" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M12 3c2.2 2.1 3.4 5.3 3.4 9S14.2 18.9 12 21" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M12 3c-2.2 2.1-3.4 5.3-3.4 9s1.2 6.9 3.4 9" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 type BasketOrientation = "top" | "bottom";
 type CanvasDimensions = { width: number; height: number };
 
@@ -1268,7 +1279,7 @@ export function DiagramEditor({
                 <HelpCircle size={16} className="text-slate-400" />
               </div>
               <div className="mt-4 grid grid-cols-7 gap-3">
-                <button type="button" onClick={() => placePresetObject("ball")} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><CircleDot size={18} /></button>
+                <button type="button" onClick={() => placePresetObject("ball")} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><BallButtonIcon /></button>
                 <button type="button" onClick={() => placePresetObject("cone")} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Cone size={18} /></button>
                 <button type="button" onClick={() => { setTool("text"); setTextTemplate("T"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><PenLine size={18} /></button>
                 <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("white"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><MoveRight size={18} /></button>
