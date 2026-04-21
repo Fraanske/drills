@@ -60,7 +60,7 @@ function normalizeObject(input: unknown): DiagramObject | null {
     return {
       id,
       type: "arrow",
-      style: item.style === "curved" ? "curved" : "straight",
+      style: item.style === "curved" || item.style === "zigzag" ? item.style : "straight",
       x1: item.x1,
       y1: item.y1,
       x2: item.x2,

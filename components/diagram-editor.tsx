@@ -9,7 +9,7 @@ function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-type Tool = "player" | "cone" | "ball" | "straightArrow" | "curvedArrow" | "text";
+type Tool = "player" | "cone" | "ball" | "straightArrow" | "curvedArrow" | "zigzagArrow" | "text";
 type Point = { x: number; y: number };
 type DraftArrow = Extract<DiagramObject, { type: "arrow" }>;
 
@@ -51,8 +51,46 @@ function getColorStyle(color: DiagramColor) {
   return colorStyles[color];
 }
 
+function getZigZagArrowPoints(arrow: DraftArrow) {
+  const start = { x: arrow.x1, y: arrow.y1 };
+  const control =
+    arrow.style === "curved" && typeof arrow.cx === "number" && typeof arrow.cy === "number"
+      ? { x: arrow.cx, y: arrow.cy }
+      : { x: (arrow.x1 + arrow.x2) / 2, y: (arrow.y1 + arrow.y2) / 2 };
+  const end = { x: arrow.x2, y: arrow.y2 };
+  const segments = 7;
+  const amplitude = 10;
+  const points = [start];
+
+  for (let step = 1; step < segments; step += 1) {
+    const t = step / segments;
+    const mt = 1 - t;
+    const x = mt * mt * start.x + 2 * mt * t * control.x + t * t * end.x;
+    const y = mt * mt * start.y + 2 * mt * t * control.y + t * t * end.y;
+    const tangentX = 2 * mt * (control.x - start.x) + 2 * t * (end.x - control.x);
+    const tangentY = 2 * mt * (control.y - start.y) + 2 * t * (end.y - control.y);
+    const tangentLength = Math.hypot(tangentX, tangentY) || 1;
+    const normalX = -tangentY / tangentLength;
+    const normalY = tangentX / tangentLength;
+    const direction = step % 2 === 0 ? -1 : 1;
+
+    points.push({
+      x: x + normalX * amplitude * direction,
+      y: y + normalY * amplitude * direction,
+    });
+  }
+
+  points.push(end);
+  return points;
+}
+
 function getArrowPath(arrow: DraftArrow) {
-  if (arrow.style === "curved" && typeof arrow.cx === "number" && typeof arrow.cy === "number") {
+  if ((arrow.style === "curved" || arrow.style === "zigzag") && typeof arrow.cx === "number" && typeof arrow.cy === "number") {
+    if (arrow.style === "zigzag") {
+      const points = getZigZagArrowPoints(arrow);
+      return points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
+    }
+
     return `M ${arrow.x1} ${arrow.y1} Q ${arrow.cx} ${arrow.cy} ${arrow.x2} ${arrow.y2}`;
   }
 
@@ -60,7 +98,13 @@ function getArrowPath(arrow: DraftArrow) {
 }
 
 function getArrowAngle(arrow: DraftArrow) {
-  if (arrow.style === "curved" && typeof arrow.cx === "number" && typeof arrow.cy === "number") {
+  if ((arrow.style === "curved" || arrow.style === "zigzag") && typeof arrow.cx === "number" && typeof arrow.cy === "number") {
+    if (arrow.style === "zigzag") {
+      const points = getZigZagArrowPoints(arrow);
+      const previous = points[points.length - 2];
+      return Math.atan2(arrow.y2 - previous.y, arrow.x2 - previous.x);
+    }
+
     return Math.atan2(arrow.y2 - arrow.cy, arrow.x2 - arrow.cx);
   }
 
@@ -82,7 +126,7 @@ function getArrowHeadPolygon(arrow: DraftArrow) {
   return `${tipX},${tipY} ${leftX},${leftY} ${rightX},${rightY}`;
 }
 
-function createArrow(start: Point, end: Point, style: "straight" | "curved", color: DiagramColor): DraftArrow {
+function createArrow(start: Point, end: Point, style: "straight" | "curved" | "zigzag", color: DiagramColor): DraftArrow {
   const arrow: DraftArrow = {
     id: uid(),
     type: "arrow",
@@ -94,7 +138,7 @@ function createArrow(start: Point, end: Point, style: "straight" | "curved", col
     color,
   };
 
-  if (style === "curved") {
+  if (style === "curved" || style === "zigzag") {
     arrow.cx = (start.x + end.x) / 2;
     arrow.cy = Math.min(start.y, end.y) - 60;
   }
@@ -707,6 +751,12 @@ export function DiagramEditor({
       return;
     }
 
+    if (tool === "zigzagArrow") {
+      setDraftArrow(createArrow(point, point, "zigzag", activeItemColor));
+      setActiveObjectId(null);
+      return;
+    }
+
     addObject(point);
   }
 
@@ -862,7 +912,7 @@ export function DiagramEditor({
             { id: uid(), type: "player", x: 340, y: 700, label: "3", color: "white" },
             { id: uid(), type: "player", x: 150, y: 560, label: "4", color: "white" },
             { id: uid(), type: "player", x: 370, y: 560, label: "5", color: "white" },
-            { id: uid(), type: "arrow", style: "curved", x1: 260, y1: 790, x2: 210, y2: 650, cx: 210, cy: 730, color: "yellow" },
+            { id: uid(), type: "arrow", style: "zigzag", x1: 260, y1: 790, x2: 210, y2: 650, cx: 210, cy: 730, color: "yellow" },
             { id: uid(), type: "arrow", style: "straight", x1: 340, y1: 700, x2: 260, y2: 455, color: "white" },
             { id: uid(), type: "text", x: 290, y: 860, text: "Transition", color: "blue" },
           ]
@@ -872,7 +922,7 @@ export function DiagramEditor({
             { id: uid(), type: "player", x: 560, y: 130, label: "3", color: "white" },
             { id: uid(), type: "player", x: 320, y: 190, label: "4", color: "white" },
             { id: uid(), type: "player", x: 600, y: 190, label: "5", color: "white" },
-            { id: uid(), type: "arrow", style: "curved", x1: 460, y1: 90, x2: 375, y2: 195, cx: 405, cy: 135, color: "yellow" },
+            { id: uid(), type: "arrow", style: "zigzag", x1: 460, y1: 90, x2: 375, y2: 195, cx: 405, cy: 135, color: "yellow" },
             { id: uid(), type: "arrow", style: "straight", x1: 560, y1: 130, x2: 460, y2: 270, color: "green" },
             { id: uid(), type: "cone", x: 460, y: 295, color: "red" },
           ];
@@ -1220,9 +1270,10 @@ export function DiagramEditor({
                 <HelpCircle size={16} className="text-slate-400" />
               </div>
               <div className="mt-4 grid grid-cols-3 gap-3">
-                <button type="button" onClick={() => { setTool("curvedArrow"); setActiveItemColor("yellow"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Dribble</button>
+                <button type="button" onClick={() => { setTool("zigzagArrow"); setActiveItemColor("yellow"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Dribble</button>
                 <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("white"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Pass</button>
                 <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("green"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Cut</button>
+                <button type="button" onClick={() => { setTool("curvedArrow"); setActiveItemColor("white"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Walk/Run</button>
               </div>
             </section>
 
@@ -1252,7 +1303,7 @@ export function DiagramEditor({
                 <button type="button" onClick={() => placePresetObject("cone")} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Cone size={18} /></button>
                 <button type="button" onClick={() => { setTool("text"); setTextTemplate("T"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><PenLine size={18} /></button>
                 <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("white"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><MoveRight size={18} /></button>
-                <button type="button" onClick={() => { setTool("curvedArrow"); setActiveItemColor("yellow"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Spline size={18} /></button>
+                <button type="button" onClick={() => { setTool("curvedArrow"); setActiveItemColor("white"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Spline size={18} /></button>
                 <button type="button" onClick={() => { setTool("text"); setTextTemplate("Note"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><StickyNote size={18} /></button>
               </div>
             </section>

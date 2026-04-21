@@ -23,7 +23,7 @@ export type DiagramObject =
   | { id: string; type: "player"; x: number; y: number; label: string; color: DiagramColor }
   | { id: string; type: "cone"; x: number; y: number; color: DiagramColor }
   | { id: string; type: "ball"; x: number; y: number; color: DiagramColor }
-  | { id: string; type: "arrow"; style: "straight" | "curved"; x1: number; y1: number; x2: number; y2: number; cx?: number; cy?: number; color: DiagramColor }
+  | { id: string; type: "arrow"; style: "straight" | "curved" | "zigzag"; x1: number; y1: number; x2: number; y2: number; cx?: number; cy?: number; color: DiagramColor }
   | { id: string; type: "text"; x: number; y: number; text: string; color: DiagramColor }
   | { id: string; type: "path"; d: string };
 

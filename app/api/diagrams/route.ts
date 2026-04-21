@@ -6,7 +6,7 @@ const diagramObjectSchema = z.discriminatedUnion("type", [
   z.object({ id: z.string(), type: z.literal("player"), x: z.number(), y: z.number(), label: z.string(), color: z.enum(["blue", "red", "yellow", "green", "white"]) }),
   z.object({ id: z.string(), type: z.literal("cone"), x: z.number(), y: z.number() }),
   z.object({ id: z.string(), type: z.literal("ball"), x: z.number(), y: z.number() }),
-  z.object({ id: z.string(), type: z.literal("arrow"), style: z.enum(["straight", "curved"]), x1: z.number(), y1: z.number(), x2: z.number(), y2: z.number(), cx: z.number().optional(), cy: z.number().optional(), color: z.string() }),
+  z.object({ id: z.string(), type: z.literal("arrow"), style: z.enum(["straight", "curved", "zigzag"]), x1: z.number(), y1: z.number(), x2: z.number(), y2: z.number(), cx: z.number().optional(), cy: z.number().optional(), color: z.string() }),
   z.object({ id: z.string(), type: z.literal("text"), x: z.number(), y: z.number(), text: z.string() }),
   z.object({ id: z.string(), type: z.literal("path"), d: z.string() }),
 ]);
