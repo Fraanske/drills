@@ -18,20 +18,26 @@ const boardWidth = 520;
 const boardHeight = 920;
 const courtLayout = {
   inset: 22,
-  lineWidth: 2.5,
-  hoopRadius: 9,
-  backboardWidth: 72,
-  backboardOffset: 24,
-  rimOffset: 58,
-  laneWidth: 150,
-  laneDepth: 190,
-  freeThrowRadius: 60,
-  restrictedRadius: 36,
-  centerRadiusOuter: 58,
-  centerRadiusInner: 16,
-  threeLineInset: 36,
-  threeBreakOffset: 138,
-  halfCourtArcRadius: 58,
+  fullCourtLengthM: 28,
+  halfCourtLengthM: 14,
+  courtWidthM: 15,
+  lineWidthM: 0.05,
+  centerCircleRadiusM: 1.8,
+  freeThrowRadiusM: 1.8,
+  freeThrowLineDistanceM: 5.8,
+  freeThrowLineWidthM: 3.6,
+  restrictedHalfWidthM: 2.45,
+  hoopCenterFromBaselineM: 1.575,
+  hoopRadiusM: 0.225,
+  backboardWidthM: 1.8,
+  backboardFromBaselineM: 1.2,
+  noChargeRadiusM: 1.3,
+  noChargeLineLengthM: 0.375,
+  noChargeLineEndFromBaselineM: 1.2,
+  threePointRadiusM: 6.75,
+  threePointSideOffsetM: 0.9,
+  throwInLineLengthM: 0.15,
+  throwInLineDistanceM: 8.325,
 } as const;
 const diagramColors: DiagramColor[] = ["blue", "red", "yellow", "green", "white"];
 const colorStyles: Record<DiagramColor, { fill: string; stroke: string; text: string }> = {
@@ -110,6 +116,17 @@ function CourtDefs() {
 
 type BasketOrientation = "top" | "bottom";
 
+type CourtFrame = {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+  width: number;
+  height: number;
+  scale: number;
+  centerX: number;
+};
+
 function getHalfArcPath(centerX: number, centerY: number, radius: number, sweepFlag: 0 | 1) {
   return `M ${centerX - radius} ${centerY} A ${radius} ${radius} 0 0 ${sweepFlag} ${centerX + radius} ${centerY}`;
 }
@@ -118,32 +135,60 @@ function getHorizontalArcPath(centerX: number, centerY: number, radius: number, 
   return getHalfArcPath(centerX, centerY, radius, bulge === "down" ? 1 : 0);
 }
 
+function createCourtFrame(lengthM: number, align: "fit" | "bottom" = "fit"): CourtFrame {
+  const availableWidth = boardWidth - courtLayout.inset * 2;
+  const availableHeight = boardHeight - courtLayout.inset * 2;
+  const scale = Math.min(availableWidth / courtLayout.courtWidthM, availableHeight / lengthM);
+  const width = courtLayout.courtWidthM * scale;
+  const height = lengthM * scale;
+  const left = (boardWidth - width) / 2;
+  const top = align === "bottom" ? boardHeight - courtLayout.inset - height : courtLayout.inset + (availableHeight - height) / 2;
+
+  return {
+    left,
+    right: left + width,
+    top,
+    bottom: top + height,
+    width,
+    height,
+    scale,
+    centerX: left + width / 2,
+  };
+}
+
 function BasketEnd({
-  left,
-  right,
-  baselineY,
+  frame,
+  endlineY,
   orientation,
 }: {
-  left: number;
-  right: number;
-  baselineY: number;
+  frame: CourtFrame;
+  endlineY: number;
   orientation: BasketOrientation;
 }) {
-  const centerX = (left + right) / 2;
   const inward = orientation === "top" ? 1 : -1;
-  const arcSweep = orientation === "top" ? 1 : 0;
-  const laneLeft = centerX - courtLayout.laneWidth / 2;
-  const laneRight = centerX + courtLayout.laneWidth / 2;
-  const laneInnerY = baselineY + inward * courtLayout.laneDepth;
-  const laneY = Math.min(baselineY, laneInnerY);
-  const hoopY = baselineY + inward * courtLayout.rimOffset;
-  const boardY = baselineY + inward * courtLayout.backboardOffset;
-  const freeThrowY = laneInnerY;
-  const threeLineLeft = left + courtLayout.threeLineInset;
-  const threeLineRight = right - courtLayout.threeLineInset;
-  const threeBreakY = hoopY + inward * courtLayout.threeBreakOffset;
-  const threeRadius = Math.hypot(centerX - threeLineLeft, courtLayout.threeBreakOffset);
-  const laneMarks = [36, 62, 88, 114];
+  const scale = frame.scale;
+  const lineWidth = Math.max(2, courtLayout.lineWidthM * scale);
+  const centerX = frame.centerX;
+  const laneLeft = centerX - courtLayout.restrictedHalfWidthM * scale;
+  const laneRight = centerX + courtLayout.restrictedHalfWidthM * scale;
+  const freeThrowY = endlineY + inward * courtLayout.freeThrowLineDistanceM * scale;
+  const hoopY = endlineY + inward * courtLayout.hoopCenterFromBaselineM * scale;
+  const boardY = endlineY + inward * courtLayout.backboardFromBaselineM * scale;
+  const freeThrowHalfWidth = (courtLayout.freeThrowLineWidthM / 2) * scale;
+  const noChargeLineTopY = endlineY + inward * courtLayout.noChargeLineEndFromBaselineM * scale;
+  const noChargeLineBottomY = noChargeLineTopY - inward * courtLayout.noChargeLineLengthM * scale;
+  const noChargeLeftX = centerX - courtLayout.noChargeRadiusM * scale;
+  const noChargeRightX = centerX + courtLayout.noChargeRadiusM * scale;
+  const threeLineLeft = frame.left + courtLayout.threePointSideOffsetM * scale;
+  const threeLineRight = frame.right - courtLayout.threePointSideOffsetM * scale;
+  const threePointBreakOffsetM = Math.sqrt(
+    Math.max(
+      0,
+      courtLayout.threePointRadiusM ** 2 - (courtLayout.courtWidthM / 2 - courtLayout.threePointSideOffsetM) ** 2,
+    ),
+  );
+  const threeBreakY = hoopY + inward * threePointBreakOffsetM * scale;
+  const laneMarkDistancesM = [1.75, 2.6, 3.45, 4.3];
   const courtSideBulge = orientation === "top" ? "down" : "up";
   const basketSideBulge = orientation === "top" ? "up" : "down";
 
@@ -151,53 +196,63 @@ function BasketEnd({
     <g>
       <rect
         x={laneLeft}
-        y={laneY}
-        width={courtLayout.laneWidth}
-        height={Math.abs(laneInnerY - baselineY)}
+        y={Math.min(endlineY, freeThrowY)}
+        width={laneRight - laneLeft}
+        height={Math.abs(freeThrowY - endlineY)}
         fill="var(--court-paint-fill)"
         stroke="var(--court-paint-line)"
-        strokeWidth={courtLayout.lineWidth}
+        strokeWidth={lineWidth}
+      />
+      <line
+        x1={centerX - freeThrowHalfWidth}
+        y1={freeThrowY}
+        x2={centerX + freeThrowHalfWidth}
+        y2={freeThrowY}
+        stroke="var(--court-marking)"
+        strokeWidth={lineWidth}
       />
       <path
-        d={getHorizontalArcPath(centerX, freeThrowY, courtLayout.freeThrowRadius, courtSideBulge)}
+        d={getHorizontalArcPath(centerX, freeThrowY, courtLayout.freeThrowRadiusM * scale, courtSideBulge)}
         fill="none"
         stroke="var(--court-marking)"
-        strokeWidth={courtLayout.lineWidth}
+        strokeWidth={lineWidth}
       />
       <path
-        d={getHorizontalArcPath(centerX, freeThrowY, courtLayout.freeThrowRadius, basketSideBulge)}
+        d={getHorizontalArcPath(centerX, freeThrowY, courtLayout.freeThrowRadiusM * scale, basketSideBulge)}
         fill="none"
         stroke="var(--court-marking)"
         strokeWidth={2}
         strokeDasharray="8 8"
       />
       <line
-        x1={centerX - courtLayout.backboardWidth / 2}
+        x1={centerX - (courtLayout.backboardWidthM * scale) / 2}
         y1={boardY}
-        x2={centerX + courtLayout.backboardWidth / 2}
+        x2={centerX + (courtLayout.backboardWidthM * scale) / 2}
         y2={boardY}
         stroke="var(--court-marking)"
-        strokeWidth={courtLayout.lineWidth}
+        strokeWidth={lineWidth}
       />
-      <circle cx={centerX} cy={hoopY} r={courtLayout.hoopRadius} fill="none" stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
+      <circle cx={centerX} cy={hoopY} r={courtLayout.hoopRadiusM * scale} fill="none" stroke="var(--court-marking)" strokeWidth={lineWidth} />
+      <line x1={noChargeLeftX} y1={noChargeLineBottomY} x2={noChargeLeftX} y2={noChargeLineTopY} stroke="var(--court-marking)" strokeWidth={lineWidth} />
+      <line x1={noChargeRightX} y1={noChargeLineBottomY} x2={noChargeRightX} y2={noChargeLineTopY} stroke="var(--court-marking)" strokeWidth={lineWidth} />
       <path
-        d={getHorizontalArcPath(centerX, hoopY, courtLayout.restrictedRadius, courtSideBulge)}
+        d={getHorizontalArcPath(centerX, hoopY, courtLayout.noChargeRadiusM * scale, courtSideBulge)}
         fill="none"
         stroke="var(--court-marking)"
-        strokeWidth={courtLayout.lineWidth}
+        strokeWidth={lineWidth}
       />
-      <line x1={threeLineLeft} y1={baselineY} x2={threeLineLeft} y2={threeBreakY} stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
-      <line x1={threeLineRight} y1={baselineY} x2={threeLineRight} y2={threeBreakY} stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
+      <line x1={threeLineLeft} y1={endlineY} x2={threeLineLeft} y2={threeBreakY} stroke="var(--court-marking)" strokeWidth={lineWidth} />
+      <line x1={threeLineRight} y1={endlineY} x2={threeLineRight} y2={threeBreakY} stroke="var(--court-marking)" strokeWidth={lineWidth} />
       <path
-        d={`M ${threeLineLeft} ${threeBreakY} A ${threeRadius} ${threeRadius} 0 0 ${arcSweep} ${threeLineRight} ${threeBreakY}`}
+        d={`M ${threeLineLeft} ${threeBreakY} A ${courtLayout.threePointRadiusM * scale} ${courtLayout.threePointRadiusM * scale} 0 0 ${orientation === "top" ? 1 : 0} ${threeLineRight} ${threeBreakY}`}
         fill="none"
         stroke="var(--court-marking)"
-        strokeWidth={courtLayout.lineWidth}
+        strokeWidth={lineWidth}
       />
-      {laneMarks.map((offset) => {
-        const y = baselineY + inward * offset;
+      {laneMarkDistancesM.map((distanceM) => {
+        const y = endlineY + inward * distanceM * scale;
         return (
-          <g key={offset}>
+          <g key={distanceM}>
             <line x1={laneLeft - 10} y1={y} x2={laneLeft} y2={y} stroke="var(--court-marking)" strokeWidth="2" />
             <line x1={laneRight} y1={y} x2={laneRight + 10} y2={y} stroke="var(--court-marking)" strokeWidth="2" />
           </g>
@@ -208,38 +263,38 @@ function BasketEnd({
 }
 
 function HalfCourtShape() {
-  const top = courtLayout.inset;
-  const bottom = boardHeight - courtLayout.inset;
-  const left = courtLayout.inset;
-  const right = boardWidth - courtLayout.inset;
-  const centerX = boardWidth / 2;
+  const frame = createCourtFrame(courtLayout.halfCourtLengthM, "bottom");
+  const lineWidth = Math.max(2, courtLayout.lineWidthM * frame.scale);
 
   return (
     <>
-      <rect x={left} y={top} width={right - left} height={bottom - top} fill="url(#court-wood-pattern)" stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
-      <line x1={left} y1={top} x2={right} y2={top} stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
-      <path d={getHalfArcPath(centerX, top, courtLayout.halfCourtArcRadius, 1)} fill="none" stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
-      <BasketEnd left={left} right={right} baselineY={bottom} orientation="bottom" />
+      <rect x={frame.left} y={frame.top} width={frame.width} height={frame.height} fill="url(#court-wood-pattern)" stroke="var(--court-marking)" strokeWidth={lineWidth} />
+      <line x1={frame.left - 0.15 * frame.scale} y1={frame.top} x2={frame.right + 0.15 * frame.scale} y2={frame.top} stroke="var(--court-marking)" strokeWidth={lineWidth} />
+      <path d={getHorizontalArcPath(frame.centerX, frame.top, courtLayout.centerCircleRadiusM * frame.scale, "down")} fill="none" stroke="var(--court-marking)" strokeWidth={lineWidth} />
+      <BasketEnd frame={frame} endlineY={frame.bottom} orientation="bottom" />
     </>
   );
 }
 
 function FullCourtShape() {
-  const top = courtLayout.inset;
-  const bottom = boardHeight - courtLayout.inset;
-  const left = courtLayout.inset;
-  const right = boardWidth - courtLayout.inset;
-  const centerX = boardWidth / 2;
-  const centerY = boardHeight / 2;
+  const frame = createCourtFrame(courtLayout.fullCourtLengthM);
+  const lineWidth = Math.max(2, courtLayout.lineWidthM * frame.scale);
+  const centerY = frame.top + frame.height / 2;
+  const throwInOffset = courtLayout.throwInLineLengthM * frame.scale;
+  const topThrowInY = frame.top + courtLayout.throwInLineDistanceM * frame.scale;
+  const bottomThrowInY = frame.bottom - courtLayout.throwInLineDistanceM * frame.scale;
 
   return (
     <>
-      <rect x={left} y={top} width={right - left} height={bottom - top} fill="url(#court-wood-pattern)" stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
-      <BasketEnd left={left} right={right} baselineY={top} orientation="top" />
-      <BasketEnd left={left} right={right} baselineY={bottom} orientation="bottom" />
-      <line x1={left} y1={centerY} x2={right} y2={centerY} stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
-      <circle cx={centerX} cy={centerY} r={courtLayout.centerRadiusOuter} fill="var(--court-paint-fill)" stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
-      <circle cx={centerX} cy={centerY} r={courtLayout.centerRadiusInner} fill="var(--court-board-bg)" stroke="var(--court-marking)" strokeWidth="2" />
+      <rect x={frame.left} y={frame.top} width={frame.width} height={frame.height} fill="url(#court-wood-pattern)" stroke="var(--court-marking)" strokeWidth={lineWidth} />
+      <BasketEnd frame={frame} endlineY={frame.top} orientation="top" />
+      <BasketEnd frame={frame} endlineY={frame.bottom} orientation="bottom" />
+      <line x1={frame.left - throwInOffset} y1={centerY} x2={frame.right + throwInOffset} y2={centerY} stroke="var(--court-marking)" strokeWidth={lineWidth} />
+      <circle cx={frame.centerX} cy={centerY} r={courtLayout.centerCircleRadiusM * frame.scale} fill="var(--court-paint-fill)" stroke="var(--court-marking)" strokeWidth={lineWidth} />
+      <line x1={frame.left - throwInOffset} y1={topThrowInY} x2={frame.left} y2={topThrowInY} stroke="var(--court-marking)" strokeWidth={lineWidth} />
+      <line x1={frame.right} y1={topThrowInY} x2={frame.right + throwInOffset} y2={topThrowInY} stroke="var(--court-marking)" strokeWidth={lineWidth} />
+      <line x1={frame.left - throwInOffset} y1={bottomThrowInY} x2={frame.left} y2={bottomThrowInY} stroke="var(--court-marking)" strokeWidth={lineWidth} />
+      <line x1={frame.right} y1={bottomThrowInY} x2={frame.right + throwInOffset} y2={bottomThrowInY} stroke="var(--court-marking)" strokeWidth={lineWidth} />
     </>
   );
 }
