@@ -185,8 +185,8 @@ function createFullCourtModel(): CourtModel {
 }
 
 function createHalfCourtModel(): CourtModel {
-  const availableWidth = boardWidth - 36;
-  const availableHeight = boardHeight - 340;
+  const availableWidth = boardWidth - 8;
+  const availableHeight = boardHeight - 180;
   const scale = Math.min(
     availableWidth / courtLayout.courtWidthM,
     availableHeight / courtLayout.halfCourtLengthM,
@@ -194,7 +194,7 @@ function createHalfCourtModel(): CourtModel {
   const width = courtLayout.courtWidthM * scale;
   const height = courtLayout.halfCourtLengthM * scale;
   const left = (boardWidth - width) / 2;
-  const top = boardHeight - height - 92;
+  const top = boardHeight - height - 28;
   const xScale = scale;
   const yScale = scale;
 
@@ -1080,7 +1080,7 @@ export function DiagramEditor({
                     <div className="rounded-lg bg-[#f4e3c4] p-1">
                       <svg
                         viewBox={`0 0 ${boardWidth} ${boardHeight}`}
-                        className={`w-full rounded-lg bg-[#f0d5a9] ${slide.courtType === "full_court" ? "h-36" : "h-24"}`}
+                        className={`w-full rounded-lg bg-[#f0d5a9] ${slide.courtType === "full_court" ? "h-36" : "h-28"}`}
                       >
                         <CourtDefs />
                         {slide.courtType === "full_court" ? <FullCourtShape /> : <HalfCourtShape />}
@@ -1110,13 +1110,13 @@ export function DiagramEditor({
         </aside>
 
         <div className="bg-[#eef2f7] px-6 py-6">
-          <div className={`mx-auto flex h-full items-center justify-center ${activeSlide.courtType === "full_court" ? "max-w-[620px]" : "max-w-[920px]"}`}>
+          <div className={`mx-auto flex h-full items-center justify-center ${activeSlide.courtType === "full_court" ? "max-w-[620px]" : "max-w-[1100px]"}`}>
             <div className="w-full rounded-[1.5rem] bg-[#e8edf3] p-5">
               <div className="rounded-[1.25rem] bg-[#f0d5a9] p-4 shadow-inner">
               <svg
                 ref={svgRef}
                 viewBox={`0 0 ${boardWidth} ${boardHeight}`}
-                className={`mx-auto w-full rounded-[1rem] bg-[#f0d5a9] ${activeSlide.courtType === "full_court" ? "aspect-[13/23] max-w-[520px]" : "aspect-[5/4] max-w-[920px]"}`}
+                className={`mx-auto w-full rounded-[1rem] bg-[#f0d5a9] ${activeSlide.courtType === "full_court" ? "aspect-[13/23] max-w-[520px]" : "aspect-[16/10] max-w-[1100px]"}`}
                 onMouseDown={onBoardMouseDown}
                 onMouseMove={onBoardMouseMove}
                 onMouseUp={onBoardMouseUp}
