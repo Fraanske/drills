@@ -1335,6 +1335,13 @@ export function DiagramEditor({
                     );
                   })}
                 </div>
+                <button
+                  type="button"
+                  onClick={clearActiveSlide}
+                  className="w-full rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
+                >
+                  Clear all
+                </button>
                 {activeObject ? (
                   <div className="grid grid-cols-2 gap-2">
                     <button type="button" onClick={duplicateActiveObject} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs font-semibold text-slate-700">Clone</button>
