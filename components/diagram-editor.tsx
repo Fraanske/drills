@@ -1302,10 +1302,10 @@ export function DiagramEditor({
                 <HelpCircle size={16} className="text-slate-400" />
               </div>
               <div className="mt-4 grid grid-cols-3 gap-3">
-                <button type="button" onClick={() => { setTool("zigzagArrow"); setActiveItemColor("yellow"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Dribble</button>
-                <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("white"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Pass</button>
-                <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("green"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Cut</button>
-                <button type="button" onClick={() => { setTool("curvedArrow"); setActiveItemColor("white"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Walk/Run</button>
+                <button type="button" onClick={() => setTool("zigzagArrow")} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Dribble</button>
+                <button type="button" onClick={() => setTool("straightArrow")} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Pass</button>
+                <button type="button" onClick={() => setTool("straightArrow")} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Cut</button>
+                <button type="button" onClick={() => setTool("curvedArrow")} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Walk/Run</button>
               </div>
             </section>
 
@@ -1334,8 +1334,8 @@ export function DiagramEditor({
                 <button type="button" onClick={() => placePresetObject("ball")} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><BallButtonIcon /></button>
                 <button type="button" onClick={() => placePresetObject("cone")} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Cone size={18} /></button>
                 <button type="button" onClick={() => { setTool("text"); setTextTemplate("T"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><PenLine size={18} /></button>
-                <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("white"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><MoveRight size={18} /></button>
-                <button type="button" onClick={() => { setTool("curvedArrow"); setActiveItemColor("white"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Spline size={18} /></button>
+                <button type="button" onClick={() => setTool("straightArrow")} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><MoveRight size={18} /></button>
+                <button type="button" onClick={() => setTool("curvedArrow")} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Spline size={18} /></button>
                 <button type="button" onClick={() => { setTool("text"); setTextTemplate("Note"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><StickyNote size={18} /></button>
               </div>
             </section>
