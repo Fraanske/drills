@@ -1230,9 +1230,6 @@ export function DiagramEditor({
                 <button type="button" onClick={() => { setTool("curvedArrow"); setActiveItemColor("yellow"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Dribble</button>
                 <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("white"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Pass</button>
                 <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("green"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Cut</button>
-                <button type="button" onClick={() => { setTool("text"); setTextTemplate("SCREEN"); setActiveItemColor("blue"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Screen</button>
-                <button type="button" onClick={() => { setTool("text"); setTextTemplate("SHOT"); setActiveItemColor("red"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Shot</button>
-                <button type="button" onClick={() => { setTool("text"); setTextTemplate("HO"); setActiveItemColor("green"); }} className="inline-flex items-center justify-center rounded-xl bg-[#37465f] px-3 py-3 text-sm font-semibold text-white">Handoff</button>
               </div>
             </section>
 
@@ -1326,18 +1323,6 @@ export function DiagramEditor({
               </div>
             </section>
 
-            <section>
-              <div className="flex items-center gap-2">
-                <p className="text-[13px] font-extrabold uppercase tracking-[0.1em] text-slate-800">Let's Get Started!</p>
-                <HelpCircle size={16} className="text-slate-400" />
-              </div>
-              <div className="mt-4">
-                <button type="button" onClick={loadExamplePlay} className="w-full rounded-2xl bg-slate-100 p-5 text-center text-slate-700">
-                  <Play className="mx-auto" size={28} />
-                  <div className="mt-3 text-sm font-semibold">Load Example Play</div>
-                </button>
-              </div>
-            </section>
           </div>
         </aside>
       </div>
