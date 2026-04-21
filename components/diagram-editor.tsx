@@ -14,22 +14,24 @@ type PanelTab = "phases" | "objects";
 type Point = { x: number; y: number };
 type DraftArrow = Extract<DiagramObject, { type: "arrow" }>;
 
-const boardWidth = 780;
-const boardHeight = 410;
+const boardWidth = 520;
+const boardHeight = 920;
 const courtLayout = {
-  lineWidth: 3,
-  hoopRadius: 10,
-  backboardWidth: 82,
-  backboardOffset: 26,
-  laneWidth: 132,
-  laneDepth: 118,
-  freeThrowRadius: 50,
-  restrictedRadius: 34,
-  centerRadiusOuter: 34,
-  centerRadiusInner: 12,
-  sidelineMarkLength: 22,
-  threeRadiusHalf: 220,
-  threeRadiusFull: 208,
+  inset: 22,
+  lineWidth: 2.5,
+  hoopRadius: 9,
+  backboardWidth: 72,
+  backboardOffset: 28,
+  rimOffset: 50,
+  laneWidth: 160,
+  laneDepth: 190,
+  freeThrowRadius: 60,
+  restrictedRadius: 38,
+  centerRadiusOuter: 58,
+  centerRadiusInner: 16,
+  threeLineInset: 32,
+  threeRadius: 238,
+  halfCourtArcRadius: 58,
 } as const;
 const diagramColors: DiagramColor[] = ["blue", "red", "yellow", "green", "white"];
 const colorStyles: Record<DiagramColor, { fill: string; stroke: string; text: string }> = {
@@ -98,49 +100,72 @@ function createArrow(start: Point, end: Point, style: "straight" | "curved", col
 function CourtDefs() {
   return (
     <defs>
-      <pattern id="court-wood-pattern" patternUnits="userSpaceOnUse" width="28" height="28">
-        <rect width="28" height="28" fill="var(--court-wood-base)" />
-        <path d="M3 2v10 M8 6v14 M14 1v9 M20 8v16 M25 3v11" stroke="var(--court-wood-line)" strokeWidth="1.4" strokeLinecap="round" opacity="0.75" />
+      <pattern id="court-wood-pattern" patternUnits="userSpaceOnUse" width="32" height="32">
+        <rect width="32" height="32" fill="var(--court-wood-base)" />
+        <path d="M4 2v12 M10 6v18 M16 1v11 M23 7v19 M29 4v13" stroke="var(--court-wood-line)" strokeWidth="1.6" strokeLinecap="round" opacity="0.75" />
       </pattern>
     </defs>
   );
 }
 
+type BasketOrientation = "top" | "bottom";
+
+function getHalfArcPath(centerX: number, centerY: number, radius: number, sweepFlag: 0 | 1) {
+  return `M ${centerX - radius} ${centerY} A ${radius} ${radius} 0 0 ${sweepFlag} ${centerX + radius} ${centerY}`;
+}
+
 function BasketEnd({
-  centerX,
-  topY,
-  flip = false,
+  left,
+  right,
+  baselineY,
+  orientation,
 }: {
-  centerX: number;
-  topY: number;
-  flip?: boolean;
+  left: number;
+  right: number;
+  baselineY: number;
+  orientation: BasketOrientation;
 }) {
-  const direction = flip ? -1 : 1;
+  const centerX = (left + right) / 2;
+  const inward = orientation === "top" ? 1 : -1;
+  const arcSweep = orientation === "top" ? 1 : 0;
   const laneLeft = centerX - courtLayout.laneWidth / 2;
-  const laneTop = flip ? topY - courtLayout.laneDepth : topY;
-  const laneBottom = flip ? topY : topY + courtLayout.laneDepth;
-  const hoopY = topY + direction * courtLayout.backboardOffset;
-  const boardY = topY + direction * 10;
-  const arcSweep = flip ? 1 : 0;
-  const tickOffsets = [32, 54, 76];
+  const laneRight = centerX + courtLayout.laneWidth / 2;
+  const laneInnerY = baselineY + inward * courtLayout.laneDepth;
+  const laneY = Math.min(baselineY, laneInnerY);
+  const hoopY = baselineY + inward * courtLayout.rimOffset;
+  const boardY = baselineY + inward * courtLayout.backboardOffset;
+  const freeThrowY = laneInnerY;
+  const threeLineLeft = left + courtLayout.threeLineInset;
+  const threeLineRight = right - courtLayout.threeLineInset;
+  const threeArcHalfSpan = Math.sqrt(
+    Math.max(0, courtLayout.threeRadius * courtLayout.threeRadius - (centerX - threeLineLeft) ** 2),
+  );
+  const threeBreakY = hoopY + inward * threeArcHalfSpan;
+  const laneMarks = [36, 62, 88, 114];
 
   return (
     <g>
       <rect
         x={laneLeft}
-        y={laneTop}
+        y={laneY}
         width={courtLayout.laneWidth}
-        height={courtLayout.laneDepth}
+        height={Math.abs(laneInnerY - baselineY)}
         fill="var(--court-paint-fill)"
         stroke="var(--court-paint-line)"
         strokeWidth={courtLayout.lineWidth}
       />
       <path
-        d={`M ${centerX - courtLayout.freeThrowRadius} ${laneBottom} A ${courtLayout.freeThrowRadius} ${courtLayout.freeThrowRadius} 0 0 ${arcSweep} ${centerX + courtLayout.freeThrowRadius} ${laneBottom}`}
+        d={getHalfArcPath(centerX, freeThrowY, courtLayout.freeThrowRadius, arcSweep)}
         fill="none"
         stroke="var(--court-marking)"
-        strokeWidth="2"
-        strokeDasharray="7 6"
+        strokeWidth={courtLayout.lineWidth}
+      />
+      <path
+        d={getHalfArcPath(centerX, freeThrowY, courtLayout.freeThrowRadius, arcSweep === 1 ? 0 : 1)}
+        fill="none"
+        stroke="var(--court-marking)"
+        strokeWidth={2}
+        strokeDasharray="8 8"
       />
       <line
         x1={centerX - courtLayout.backboardWidth / 2}
@@ -150,91 +175,67 @@ function BasketEnd({
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
       />
-      <circle cx={centerX} cy={hoopY} r={courtLayout.hoopRadius} fill="none" stroke="var(--court-marking)" strokeWidth="2.5" />
+      <circle cx={centerX} cy={hoopY} r={courtLayout.hoopRadius} fill="none" stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
       <path
-        d={`M ${centerX - courtLayout.restrictedRadius} ${hoopY} A ${courtLayout.restrictedRadius} ${courtLayout.restrictedRadius} 0 0 ${arcSweep} ${centerX + courtLayout.restrictedRadius} ${hoopY}`}
+        d={getHalfArcPath(centerX, hoopY, courtLayout.restrictedRadius, arcSweep)}
         fill="none"
         stroke="var(--court-marking)"
-        strokeWidth="2.5"
+        strokeWidth={courtLayout.lineWidth}
       />
-      {tickOffsets.map((offset) => (
-        <g key={offset}>
-          <line
-            x1={laneLeft}
-            y1={topY + direction * offset}
-            x2={laneLeft + 10}
-            y2={topY + direction * offset}
-            stroke="var(--court-marking)"
-            strokeWidth="2"
-          />
-          <line
-            x1={laneLeft + courtLayout.laneWidth - 10}
-            y1={topY + direction * offset}
-            x2={laneLeft + courtLayout.laneWidth}
-            y2={topY + direction * offset}
-            stroke="var(--court-marking)"
-            strokeWidth="2"
-          />
-        </g>
-      ))}
+      <line x1={threeLineLeft} y1={baselineY} x2={threeLineLeft} y2={threeBreakY} stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
+      <line x1={threeLineRight} y1={baselineY} x2={threeLineRight} y2={threeBreakY} stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
+      <path
+        d={`M ${threeLineLeft} ${threeBreakY} A ${courtLayout.threeRadius} ${courtLayout.threeRadius} 0 0 ${arcSweep} ${threeLineRight} ${threeBreakY}`}
+        fill="none"
+        stroke="var(--court-marking)"
+        strokeWidth={courtLayout.lineWidth}
+      />
+      {laneMarks.map((offset) => {
+        const y = baselineY + inward * offset;
+        return (
+          <g key={offset}>
+            <line x1={laneLeft - 10} y1={y} x2={laneLeft} y2={y} stroke="var(--court-marking)" strokeWidth="2" />
+            <line x1={laneRight} y1={y} x2={laneRight + 10} y2={y} stroke="var(--court-marking)" strokeWidth="2" />
+          </g>
+        );
+      })}
     </g>
   );
 }
 
 function HalfCourtShape() {
-  const top = 18;
-  const bottom = boardHeight - 18;
-  const left = 18;
-  const right = boardWidth - 18;
+  const top = courtLayout.inset;
+  const bottom = boardHeight - courtLayout.inset;
+  const left = courtLayout.inset;
+  const right = boardWidth - courtLayout.inset;
   const centerX = boardWidth / 2;
-  const baselineY = top + 12;
-  const laneTop = baselineY;
-  const arcCenterY = baselineY + 86;
-  const arcRadius = courtLayout.threeRadiusHalf;
 
   return (
     <>
-      <rect x={left} y={top} width={right - left} height={bottom - top} fill="url(#court-wood-pattern)" stroke="var(--court-marking)" strokeWidth="2.5" />
-      <BasketEnd centerX={centerX} topY={laneTop} />
-      <path
-        d={`M ${centerX - arcRadius} ${arcCenterY} A ${arcRadius} ${arcRadius} 0 0 1 ${centerX + arcRadius} ${arcCenterY}`}
-        fill="none"
-        stroke="var(--court-marking)"
-        strokeWidth="2.5"
-      />
-      <line x1={left} y1={baselineY} x2={left + courtLayout.sidelineMarkLength} y2={baselineY} stroke="var(--court-marking)" strokeWidth="2.5" />
-      <line x1={right - courtLayout.sidelineMarkLength} y1={baselineY} x2={right} y2={baselineY} stroke="var(--court-marking)" strokeWidth="2.5" />
+      <rect x={left} y={top} width={right - left} height={bottom - top} fill="url(#court-wood-pattern)" stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
+      <line x1={left} y1={top} x2={right} y2={top} stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
+      <path d={getHalfArcPath(centerX, top, courtLayout.halfCourtArcRadius, 1)} fill="none" stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
+      <BasketEnd left={left} right={right} baselineY={bottom} orientation="bottom" />
     </>
   );
 }
 
 function FullCourtShape() {
-  const top = 12;
-  const bottom = boardHeight - 12;
-  const left = 18;
-  const right = boardWidth - 18;
+  const top = courtLayout.inset;
+  const bottom = boardHeight - courtLayout.inset;
+  const left = courtLayout.inset;
+  const right = boardWidth - courtLayout.inset;
   const centerX = boardWidth / 2;
   const centerY = boardHeight / 2;
-  const topBaseline = top + 12;
-  const bottomBaseline = bottom - 12;
-  const arcRadius = courtLayout.threeRadiusFull;
-  const topArcCenterY = topBaseline + 84;
-  const bottomArcCenterY = bottomBaseline - 84;
 
   return (
     <>
-      <rect x={left} y={top} width={right - left} height={bottom - top} fill="url(#court-wood-pattern)" stroke="var(--court-marking)" strokeWidth="2.5" />
-      <BasketEnd centerX={centerX} topY={topBaseline} />
-      <BasketEnd centerX={centerX} topY={bottomBaseline} flip />
-      <line x1={left} y1={centerY} x2={right} y2={centerY} stroke="var(--court-marking)" strokeWidth="2.5" />
-      <circle cx={centerX} cy={centerY} r={courtLayout.centerRadiusOuter} fill="var(--court-paint-fill)" stroke="var(--court-marking)" strokeWidth="2.5" />
+      <rect x={left} y={top} width={right - left} height={bottom - top} fill="url(#court-wood-pattern)" stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
+      <BasketEnd left={left} right={right} baselineY={top} orientation="top" />
+      <BasketEnd left={left} right={right} baselineY={bottom} orientation="bottom" />
+      <line x1={left} y1={centerY} x2={right} y2={centerY} stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
+      <circle cx={centerX} cy={centerY} r={courtLayout.centerRadiusOuter} fill="var(--court-paint-fill)" stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
       <circle cx={centerX} cy={centerY} r={courtLayout.centerRadiusInner} fill="var(--court-board-bg)" stroke="var(--court-marking)" strokeWidth="2" />
-      <path d={`M ${centerX - arcRadius} ${topArcCenterY} A ${arcRadius} ${arcRadius} 0 0 1 ${centerX + arcRadius} ${topArcCenterY}`} fill="none" stroke="var(--court-marking)" strokeWidth="2.5" />
-      <path d={`M ${centerX - arcRadius} ${bottomArcCenterY} A ${arcRadius} ${arcRadius} 0 0 0 ${centerX + arcRadius} ${bottomArcCenterY}`} fill="none" stroke="var(--court-marking)" strokeWidth="2.5" />
-      <line x1={left} y1={topBaseline} x2={left + courtLayout.sidelineMarkLength} y2={topBaseline} stroke="var(--court-marking)" strokeWidth="2.5" />
-      <line x1={right - courtLayout.sidelineMarkLength} y1={topBaseline} x2={right} y2={topBaseline} stroke="var(--court-marking)" strokeWidth="2.5" />
-      <line x1={left} y1={bottomBaseline} x2={left + courtLayout.sidelineMarkLength} y2={bottomBaseline} stroke="var(--court-marking)" strokeWidth="2.5" />
-      <line x1={right - courtLayout.sidelineMarkLength} y1={bottomBaseline} x2={right} y2={bottomBaseline} stroke="var(--court-marking)" strokeWidth="2.5" />
     </>
   );
 }
@@ -335,20 +336,20 @@ export function DiagramEditor({
 
   function getPresetPoint(index: number) {
     const halfCourtPresets: Point[] = [
-      { x: 260, y: 285 },
-      { x: 340, y: 255 },
-      { x: 440, y: 255 },
-      { x: 520, y: 285 },
-      { x: 390, y: 330 },
-      { x: 610, y: 300 },
+      { x: 260, y: 770 },
+      { x: 180, y: 700 },
+      { x: 340, y: 700 },
+      { x: 120, y: 620 },
+      { x: 400, y: 620 },
+      { x: 260, y: 540 },
     ];
     const fullCourtPresets: Point[] = [
-      { x: 240, y: 280 },
-      { x: 320, y: 220 },
-      { x: 460, y: 220 },
-      { x: 540, y: 280 },
-      { x: 390, y: 340 },
-      { x: 390, y: 120 },
+      { x: 260, y: 780 },
+      { x: 180, y: 690 },
+      { x: 340, y: 690 },
+      { x: 140, y: 555 },
+      { x: 380, y: 555 },
+      { x: 260, y: 250 },
     ];
     const presets = activeSlide?.courtType === "full_court" ? fullCourtPresets : halfCourtPresets;
     return presets[index % presets.length];
@@ -647,24 +648,24 @@ export function DiagramEditor({
     const sampleObjects: DiagramObject[] =
       activeSlide.courtType === "full_court"
         ? [
-            { id: uid(), type: "player", x: 210, y: 640, label: "1", color: "white" },
-            { id: uid(), type: "player", x: 290, y: 550, label: "2", color: "white" },
-            { id: uid(), type: "player", x: 390, y: 500, label: "3", color: "white" },
-            { id: uid(), type: "player", x: 500, y: 550, label: "4", color: "white" },
-            { id: uid(), type: "player", x: 580, y: 640, label: "5", color: "white" },
-            { id: uid(), type: "arrow", style: "curved", x1: 210, y1: 640, x2: 325, y2: 540, cx: 250, cy: 555, color: "yellow" },
-            { id: uid(), type: "arrow", style: "straight", x1: 390, y1: 500, x2: 500, y2: 550, color: "white" },
-            { id: uid(), type: "text", x: 405, y: 725, text: "Transition", color: "blue" },
+            { id: uid(), type: "player", x: 260, y: 790, label: "1", color: "white" },
+            { id: uid(), type: "player", x: 180, y: 700, label: "2", color: "white" },
+            { id: uid(), type: "player", x: 340, y: 700, label: "3", color: "white" },
+            { id: uid(), type: "player", x: 150, y: 560, label: "4", color: "white" },
+            { id: uid(), type: "player", x: 370, y: 560, label: "5", color: "white" },
+            { id: uid(), type: "arrow", style: "curved", x1: 260, y1: 790, x2: 210, y2: 650, cx: 210, cy: 730, color: "yellow" },
+            { id: uid(), type: "arrow", style: "straight", x1: 340, y1: 700, x2: 260, y2: 455, color: "white" },
+            { id: uid(), type: "text", x: 290, y: 860, text: "Transition", color: "blue" },
           ]
         : [
-            { id: uid(), type: "player", x: 260, y: 290, label: "1", color: "white" },
-            { id: uid(), type: "player", x: 340, y: 230, label: "2", color: "white" },
-            { id: uid(), type: "player", x: 440, y: 230, label: "3", color: "white" },
-            { id: uid(), type: "player", x: 520, y: 290, label: "4", color: "white" },
-            { id: uid(), type: "player", x: 390, y: 345, label: "5", color: "white" },
-            { id: uid(), type: "arrow", style: "curved", x1: 260, y1: 290, x2: 385, y2: 220, cx: 305, cy: 210, color: "yellow" },
-            { id: uid(), type: "arrow", style: "straight", x1: 390, y1: 345, x2: 455, y2: 255, color: "green" },
-            { id: uid(), type: "cone", x: 390, y: 195, color: "red" },
+            { id: uid(), type: "player", x: 260, y: 790, label: "1", color: "white" },
+            { id: uid(), type: "player", x: 180, y: 700, label: "2", color: "white" },
+            { id: uid(), type: "player", x: 340, y: 700, label: "3", color: "white" },
+            { id: uid(), type: "player", x: 135, y: 615, label: "4", color: "white" },
+            { id: uid(), type: "player", x: 385, y: 615, label: "5", color: "white" },
+            { id: uid(), type: "arrow", style: "curved", x1: 260, y1: 790, x2: 195, y2: 650, cx: 210, cy: 730, color: "yellow" },
+            { id: uid(), type: "arrow", style: "straight", x1: 340, y1: 700, x2: 260, y2: 510, color: "green" },
+            { id: uid(), type: "cone", x: 260, y: 465, color: "red" },
           ];
 
     setActiveSlideObjects(() => sampleObjects);
@@ -854,7 +855,7 @@ export function DiagramEditor({
                     className={`w-full rounded-xl border p-2 text-left transition ${slide.id === activeSlide.id ? "border-[#1d8fff] shadow-[inset_0_0_0_2px_#1d8fff]" : "border-slate-200 hover:border-slate-300"}`}
                   >
                     <div className="rounded-lg bg-[#f4e3c4] p-1">
-                      <svg viewBox={`0 0 ${boardWidth} ${boardHeight}`} className="w-full rounded-lg">
+                      <svg viewBox={`0 0 ${boardWidth} ${boardHeight}`} className="h-36 w-full rounded-lg bg-[#f0d5a9]">
                         <CourtDefs />
                         {slide.courtType === "full_court" ? <FullCourtShape /> : <HalfCourtShape />}
                       </svg>
@@ -883,13 +884,13 @@ export function DiagramEditor({
         </aside>
 
         <div className="bg-[#eef2f7] px-6 py-6">
-          <div className="mx-auto flex h-full max-w-[860px] items-center justify-center">
+          <div className="mx-auto flex h-full max-w-[620px] items-center justify-center">
             <div className="w-full rounded-[1.5rem] bg-[#e8edf3] p-5">
               <div className="rounded-[1.25rem] bg-[#f0d5a9] p-4 shadow-inner">
               <svg
                 ref={svgRef}
                 viewBox={`0 0 ${boardWidth} ${boardHeight}`}
-                className="w-full rounded-[1rem] bg-[#f0d5a9]"
+                className="mx-auto aspect-[13/23] w-full max-w-[520px] rounded-[1rem] bg-[#f0d5a9]"
                 onMouseDown={onBoardMouseDown}
                 onMouseMove={onBoardMouseMove}
                 onMouseUp={onBoardMouseUp}
