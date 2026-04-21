@@ -274,7 +274,7 @@ function BasketEnd({
           freeThrowY,
           courtLayout.freeThrowCircleRadiusM * circleRadius,
           courtLayout.freeThrowCircleRadiusM * circleRadius,
-          courtSweep,
+          basketSweep,
         )}
         fill="none"
         stroke="var(--court-marking)"
@@ -286,7 +286,7 @@ function BasketEnd({
           freeThrowY,
           courtLayout.freeThrowCircleRadiusM * circleRadius,
           courtLayout.freeThrowCircleRadiusM * circleRadius,
-          basketSweep,
+          courtSweep,
         )}
         fill="none"
         stroke="var(--court-marking)"
@@ -332,7 +332,7 @@ function BasketEnd({
           hoopY,
           courtLayout.restrictedRadiusM * circleRadius,
           courtLayout.restrictedRadiusM * circleRadius,
-          courtSweep,
+          basketSweep,
         )}
         fill="none"
         stroke="var(--court-marking)"
