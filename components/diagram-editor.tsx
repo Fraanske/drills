@@ -84,6 +84,40 @@ function getZigZagArrowPoints(arrow: DraftArrow) {
   return points;
 }
 
+function getWavyArrowPoints(arrow: DraftArrow) {
+  const start = { x: arrow.x1, y: arrow.y1 };
+  const control =
+    typeof arrow.cx === "number" && typeof arrow.cy === "number"
+      ? { x: arrow.cx, y: arrow.cy }
+      : { x: (arrow.x1 + arrow.x2) / 2, y: (arrow.y1 + arrow.y2) / 2 };
+  const end = { x: arrow.x2, y: arrow.y2 };
+  const segments = 36;
+  const amplitude = 8;
+  const waves = 5;
+  const points = [start];
+
+  for (let step = 1; step < segments; step += 1) {
+    const t = step / segments;
+    const mt = 1 - t;
+    const x = mt * mt * start.x + 2 * mt * t * control.x + t * t * end.x;
+    const y = mt * mt * start.y + 2 * mt * t * control.y + t * t * end.y;
+    const tangentX = 2 * mt * (control.x - start.x) + 2 * t * (end.x - control.x);
+    const tangentY = 2 * mt * (control.y - start.y) + 2 * t * (end.y - control.y);
+    const tangentLength = Math.hypot(tangentX, tangentY) || 1;
+    const normalX = -tangentY / tangentLength;
+    const normalY = tangentX / tangentLength;
+    const offset = Math.sin(t * Math.PI * 2 * waves) * amplitude;
+
+    points.push({
+      x: x + normalX * offset,
+      y: y + normalY * offset,
+    });
+  }
+
+  points.push(end);
+  return points;
+}
+
 function getArrowPath(arrow: DraftArrow) {
   if ((arrow.style === "curved" || arrow.style === "zigzag") && typeof arrow.cx === "number" && typeof arrow.cy === "number") {
     if (arrow.style === "zigzag") {
@@ -91,7 +125,8 @@ function getArrowPath(arrow: DraftArrow) {
       return points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
     }
 
-    return `M ${arrow.x1} ${arrow.y1} Q ${arrow.cx} ${arrow.cy} ${arrow.x2} ${arrow.y2}`;
+    const points = getWavyArrowPoints(arrow);
+    return points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
   }
 
   return `M ${arrow.x1} ${arrow.y1} L ${arrow.x2} ${arrow.y2}`;
@@ -105,7 +140,9 @@ function getArrowAngle(arrow: DraftArrow) {
       return Math.atan2(arrow.y2 - previous.y, arrow.x2 - previous.x);
     }
 
-    return Math.atan2(arrow.y2 - arrow.cy, arrow.x2 - arrow.cx);
+    const points = getWavyArrowPoints(arrow);
+    const previous = points[points.length - 2];
+    return Math.atan2(arrow.y2 - previous.y, arrow.x2 - previous.x);
   }
 
   return Math.atan2(arrow.y2 - arrow.y1, arrow.x2 - arrow.x1);
