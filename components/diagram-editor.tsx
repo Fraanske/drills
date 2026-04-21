@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Circle, CircleDot, ClipboardList, Cone, Diamond, HelpCircle, Image as ImageIcon, MonitorPlay, MoreHorizontal, MoveRight, PenLine, Play, RectangleHorizontal, Redo2, Save, SlidersHorizontal, Spline, Square, StickyNote, Triangle, Undo2, Users, X } from "lucide-react";
+import { CircleDot, Cone, HelpCircle, MoveRight, PenLine, Play, Redo2, Save, Spline, StickyNote, Undo2, Users, X } from "lucide-react";
 import type { DiagramColor, DiagramObject, DiagramPayload, DiagramSlide } from "@/lib/types";
 import { createEmptySlide } from "@/lib/diagram";
 
@@ -10,7 +10,6 @@ function uid() {
 }
 
 type Tool = "select" | "player" | "cone" | "ball" | "straightArrow" | "curvedArrow" | "text";
-type PanelTab = "phases" | "objects";
 type Point = { x: number; y: number };
 type DraftArrow = Extract<DiagramObject, { type: "arrow" }>;
 
@@ -468,31 +467,6 @@ function FullCourtShape() {
   );
 }
 
-function ToolButton({
-  active,
-  label,
-  onClick,
-  icon,
-}: {
-  active: boolean;
-  label: string;
-  onClick: () => void;
-  icon: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex min-w-[68px] flex-col items-center justify-center gap-1 rounded-none px-4 py-3 text-sm font-semibold transition ${
-        active ? "bg-[#cbefff] text-[#0f3566]" : "bg-transparent text-white hover:bg-white/10"
-      }`}
-    >
-      {icon}
-      {label}
-    </button>
-  );
-}
-
 export function DiagramEditor({
   initialDiagram,
   drillId,
@@ -501,7 +475,6 @@ export function DiagramEditor({
   drillId: string;
 }) {
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const [panelTab, setPanelTab] = useState<PanelTab>("phases");
   const [tool, setTool] = useState<Tool>("player");
   const [diagram, setDiagram] = useState<DiagramPayload>(initialDiagram);
   const [history, setHistory] = useState<DiagramPayload[]>([]);
@@ -997,12 +970,6 @@ export function DiagramEditor({
           <X size={16} />
           Close
         </button>
-        <div className="ml-6 hidden items-stretch gap-0 md:flex">
-          <ToolButton active label="Draw" onClick={() => setPanelTab("phases")} icon={<PenLine size={15} />} />
-          <ToolButton active={false} label="Animate" onClick={() => {}} icon={<Play size={15} />} />
-          <ToolButton active={false} label="Notes" onClick={() => {}} icon={<StickyNote size={15} />} />
-          <ToolButton active={false} label="Output" onClick={() => {}} icon={<ClipboardList size={15} />} />
-        </div>
         <div className="min-w-0 flex-1 px-6">
           <input
             value={activeSlide.name}
@@ -1018,20 +985,11 @@ export function DiagramEditor({
           <button type="button" onClick={redo} disabled={future.length === 0} className="rounded-xl border border-white/25 p-2 disabled:opacity-40">
             <Redo2 size={18} />
           </button>
-          <button type="button" className="rounded-xl border border-white/25 p-2">
-            <MoreHorizontal size={18} />
-          </button>
           <button type="button" onClick={saveDiagram} disabled={isSaving} className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 disabled:opacity-60">
             <span className="inline-flex items-center gap-2">
               <Save size={15} />
               {isSaving ? "Saving..." : "Save Play"}
             </span>
-          </button>
-          <button type="button" className="rounded-xl border border-white/25 p-2">
-            <HelpCircle size={18} />
-          </button>
-          <button type="button" className="rounded-xl border border-white/25 p-2">
-            <SlidersHorizontal size={18} />
           </button>
         </div>
       </div>
@@ -1042,80 +1000,66 @@ export function DiagramEditor({
             <p className="text-base font-medium text-slate-900">Phases</p>
           </div>
 
-          {panelTab === "phases" ? (
-            <div className="space-y-4 p-4">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
-                Phase {diagram.slides.findIndex((slide) => slide.id === activeSlide.id) + 1}/{diagram.slides.length}
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-[10px] font-semibold text-slate-700">
-                <button type="button" onClick={() => addSlide(activeSlide.courtType)} className="rounded-lg border border-slate-200 px-2 py-2 hover:bg-slate-50">Next</button>
-                <button type="button" onClick={duplicateActiveSlide} className="rounded-lg border border-slate-200 px-2 py-2 hover:bg-slate-50">Clone</button>
-                <button type="button" onClick={clearActiveSlide} className="rounded-lg border border-slate-200 px-2 py-2 hover:bg-slate-50">Empty</button>
-                <button
-                  type="button"
-                  onClick={() => updateCourtType(activeSlide.courtType === "half_court" ? "full_court" : "half_court")}
-                  className="rounded-lg border border-slate-200 px-2 py-2 hover:bg-slate-50"
-                >
-                  {activeSlide.courtType === "half_court" ? "Full" : "Half"}
-                </button>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => updateCourtType("half_court")}
-                  className={`rounded-lg px-3 py-2 text-sm font-semibold ${activeSlide.courtType === "half_court" ? "bg-[#109c92] text-white" : "bg-slate-100 text-slate-700"}`}
-                >
-                  Half court
-                </button>
-                <button
-                  type="button"
-                  onClick={() => updateCourtType("full_court")}
-                  className={`rounded-lg px-3 py-2 text-sm font-semibold ${activeSlide.courtType === "full_court" ? "bg-[#109c92] text-white" : "bg-slate-100 text-slate-700"}`}
-                >
-                  Full court
-                </button>
-              </div>
-              <div className="space-y-2">
-                {diagram.slides.map((slide, index) => (
-                  <button
-                    key={slide.id}
-                    type="button"
-                    onClick={() => {
-                      setDiagram((current) => ({ ...current, activeSlideId: slide.id }));
-                      setActiveObjectId(null);
-                    }}
-                    className={`w-full rounded-xl border p-2 text-left transition ${slide.id === activeSlide.id ? "border-[#1d8fff] shadow-[inset_0_0_0_2px_#1d8fff]" : "border-slate-200 hover:border-slate-300"}`}
-                  >
-                    <div className="rounded-lg bg-[#f4e3c4] p-1">
-                      <svg
-                        viewBox={`0 0 ${getCanvasDimensions(slide.courtType).width} ${getCanvasDimensions(slide.courtType).height}`}
-                        className={`w-full rounded-lg bg-[#f0d5a9] ${slide.courtType === "full_court" ? "h-36" : "h-20"}`}
-                      >
-                        <CourtDefs />
-                        {slide.courtType === "full_court" ? <FullCourtShape /> : <HalfCourtShape />}
-                      </svg>
-                    </div>
-                    <div className="mt-1 flex items-center justify-between px-1 text-[9px] font-semibold text-slate-700">
-                      <span>{slide.name || `P${index + 1}`}</span>
-                      <span className="text-slate-400">{slide.courtType === "full_court" ? "Full" : "Half"}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
+          <div className="space-y-4 p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+              Phase {diagram.slides.findIndex((slide) => slide.id === activeSlide.id) + 1}/{diagram.slides.length}
+            </p>
+            <div className="grid grid-cols-2 gap-2 text-[10px] font-semibold text-slate-700">
+              <button type="button" onClick={() => addSlide(activeSlide.courtType)} className="rounded-lg border border-slate-200 px-2 py-2 hover:bg-slate-50">Next</button>
+              <button type="button" onClick={duplicateActiveSlide} className="rounded-lg border border-slate-200 px-2 py-2 hover:bg-slate-50">Clone</button>
+              <button type="button" onClick={clearActiveSlide} className="rounded-lg border border-slate-200 px-2 py-2 hover:bg-slate-50">Empty</button>
+              <button
+                type="button"
+                onClick={() => updateCourtType(activeSlide.courtType === "half_court" ? "full_court" : "half_court")}
+                className="rounded-lg border border-slate-200 px-2 py-2 hover:bg-slate-50"
+              >
+                {activeSlide.courtType === "half_court" ? "Full" : "Half"}
+              </button>
             </div>
-          ) : (
-            <div className="space-y-4 p-6 text-sm text-slate-700">
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <p className="font-semibold">Objects on board</p>
-                <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
-                  <div className="rounded-xl bg-white p-3"><span className="font-semibold">Players</span><div className="mt-1 text-lg font-bold">{objectSummary.players}</div></div>
-                  <div className="rounded-xl bg-white p-3"><span className="font-semibold">Actions</span><div className="mt-1 text-lg font-bold">{objectSummary.arrows}</div></div>
-                  <div className="rounded-xl bg-white p-3"><span className="font-semibold">Cones</span><div className="mt-1 text-lg font-bold">{objectSummary.cones}</div></div>
-                  <div className="rounded-xl bg-white p-3"><span className="font-semibold">Notes</span><div className="mt-1 text-lg font-bold">{objectSummary.notes}</div></div>
-                </div>
-              </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => updateCourtType("half_court")}
+                className={`rounded-lg px-3 py-2 text-sm font-semibold ${activeSlide.courtType === "half_court" ? "bg-[#109c92] text-white" : "bg-slate-100 text-slate-700"}`}
+              >
+                Half court
+              </button>
+              <button
+                type="button"
+                onClick={() => updateCourtType("full_court")}
+                className={`rounded-lg px-3 py-2 text-sm font-semibold ${activeSlide.courtType === "full_court" ? "bg-[#109c92] text-white" : "bg-slate-100 text-slate-700"}`}
+              >
+                Full court
+              </button>
             </div>
-          )}
+            <div className="space-y-2">
+              {diagram.slides.map((slide, index) => (
+                <button
+                  key={slide.id}
+                  type="button"
+                  onClick={() => {
+                    setDiagram((current) => ({ ...current, activeSlideId: slide.id }));
+                    setActiveObjectId(null);
+                  }}
+                  className={`w-full rounded-xl border p-2 text-left transition ${slide.id === activeSlide.id ? "border-[#1d8fff] shadow-[inset_0_0_0_2px_#1d8fff]" : "border-slate-200 hover:border-slate-300"}`}
+                >
+                  <div className="rounded-lg bg-[#f4e3c4] p-1">
+                    <svg
+                      viewBox={`0 0 ${getCanvasDimensions(slide.courtType).width} ${getCanvasDimensions(slide.courtType).height}`}
+                      className={`w-full rounded-lg bg-[#f0d5a9] ${slide.courtType === "full_court" ? "h-36" : "h-20"}`}
+                    >
+                      <CourtDefs />
+                      {slide.courtType === "full_court" ? <FullCourtShape /> : <HalfCourtShape />}
+                    </svg>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between px-1 text-[9px] font-semibold text-slate-700">
+                    <span>{slide.name || `P${index + 1}`}</span>
+                    <span className="text-slate-400">{slide.courtType === "full_court" ? "Full" : "Half"}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
         </aside>
 
         <div className="bg-[#eef2f7] px-6 py-6">
@@ -1327,16 +1271,10 @@ export function DiagramEditor({
                 <button type="button" onClick={() => placePresetObject("ball")} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><CircleDot size={18} /></button>
                 <button type="button" onClick={() => placePresetObject("cone")} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Cone size={18} /></button>
                 <button type="button" onClick={() => { setTool("text"); setTextTemplate("T"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><PenLine size={18} /></button>
-                <button type="button" className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><RectangleHorizontal size={18} /></button>
-                <button type="button" className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Circle size={18} /></button>
-                <button type="button" className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Triangle size={18} /></button>
-                <button type="button" className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Diamond size={18} /></button>
                 <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("white"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><MoveRight size={18} /></button>
                 <button type="button" onClick={() => { setTool("curvedArrow"); setActiveItemColor("yellow"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Spline size={18} /></button>
                 <button type="button" onClick={() => { setTool("text"); setTextTemplate("Note"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><StickyNote size={18} /></button>
                 <button type="button" onClick={() => setTool("select")} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Users size={18} /></button>
-                <button type="button" className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Square size={18} /></button>
-                <button type="button" className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><ImageIcon size={18} /></button>
               </div>
             </section>
 
@@ -1382,12 +1320,8 @@ export function DiagramEditor({
                 <p className="text-[13px] font-extrabold uppercase tracking-[0.1em] text-slate-800">Let's Get Started!</p>
                 <HelpCircle size={16} className="text-slate-400" />
               </div>
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <button type="button" className="rounded-2xl bg-slate-100 p-5 text-center text-slate-700">
-                  <MonitorPlay className="mx-auto" size={28} />
-                  <div className="mt-3 text-sm font-semibold">Watch Tutorial</div>
-                </button>
-                <button type="button" onClick={loadExamplePlay} className="rounded-2xl bg-slate-100 p-5 text-center text-slate-700">
+              <div className="mt-4">
+                <button type="button" onClick={loadExamplePlay} className="w-full rounded-2xl bg-slate-100 p-5 text-center text-slate-700">
                   <Play className="mx-auto" size={28} />
                   <div className="mt-3 text-sm font-semibold">Load Example Play</div>
                 </button>
