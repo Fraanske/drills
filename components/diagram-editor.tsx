@@ -21,16 +21,16 @@ const courtLayout = {
   lineWidth: 2.5,
   hoopRadius: 9,
   backboardWidth: 72,
-  backboardOffset: 28,
-  rimOffset: 50,
-  laneWidth: 160,
+  backboardOffset: 24,
+  rimOffset: 58,
+  laneWidth: 150,
   laneDepth: 190,
   freeThrowRadius: 60,
-  restrictedRadius: 38,
+  restrictedRadius: 36,
   centerRadiusOuter: 58,
   centerRadiusInner: 16,
-  threeLineInset: 32,
-  threeRadius: 238,
+  threeLineInset: 36,
+  threeBreakOffset: 138,
   halfCourtArcRadius: 58,
 } as const;
 const diagramColors: DiagramColor[] = ["blue", "red", "yellow", "green", "white"];
@@ -114,6 +114,10 @@ function getHalfArcPath(centerX: number, centerY: number, radius: number, sweepF
   return `M ${centerX - radius} ${centerY} A ${radius} ${radius} 0 0 ${sweepFlag} ${centerX + radius} ${centerY}`;
 }
 
+function getHorizontalArcPath(centerX: number, centerY: number, radius: number, bulge: "up" | "down") {
+  return getHalfArcPath(centerX, centerY, radius, bulge === "down" ? 1 : 0);
+}
+
 function BasketEnd({
   left,
   right,
@@ -137,11 +141,11 @@ function BasketEnd({
   const freeThrowY = laneInnerY;
   const threeLineLeft = left + courtLayout.threeLineInset;
   const threeLineRight = right - courtLayout.threeLineInset;
-  const threeArcHalfSpan = Math.sqrt(
-    Math.max(0, courtLayout.threeRadius * courtLayout.threeRadius - (centerX - threeLineLeft) ** 2),
-  );
-  const threeBreakY = hoopY + inward * threeArcHalfSpan;
+  const threeBreakY = hoopY + inward * courtLayout.threeBreakOffset;
+  const threeRadius = Math.hypot(centerX - threeLineLeft, courtLayout.threeBreakOffset);
   const laneMarks = [36, 62, 88, 114];
+  const courtSideBulge = orientation === "top" ? "down" : "up";
+  const basketSideBulge = orientation === "top" ? "up" : "down";
 
   return (
     <g>
@@ -155,13 +159,13 @@ function BasketEnd({
         strokeWidth={courtLayout.lineWidth}
       />
       <path
-        d={getHalfArcPath(centerX, freeThrowY, courtLayout.freeThrowRadius, arcSweep)}
+        d={getHorizontalArcPath(centerX, freeThrowY, courtLayout.freeThrowRadius, courtSideBulge)}
         fill="none"
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
       />
       <path
-        d={getHalfArcPath(centerX, freeThrowY, courtLayout.freeThrowRadius, arcSweep === 1 ? 0 : 1)}
+        d={getHorizontalArcPath(centerX, freeThrowY, courtLayout.freeThrowRadius, basketSideBulge)}
         fill="none"
         stroke="var(--court-marking)"
         strokeWidth={2}
@@ -177,7 +181,7 @@ function BasketEnd({
       />
       <circle cx={centerX} cy={hoopY} r={courtLayout.hoopRadius} fill="none" stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
       <path
-        d={getHalfArcPath(centerX, hoopY, courtLayout.restrictedRadius, arcSweep)}
+        d={getHorizontalArcPath(centerX, hoopY, courtLayout.restrictedRadius, courtSideBulge)}
         fill="none"
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
@@ -185,7 +189,7 @@ function BasketEnd({
       <line x1={threeLineLeft} y1={baselineY} x2={threeLineLeft} y2={threeBreakY} stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
       <line x1={threeLineRight} y1={baselineY} x2={threeLineRight} y2={threeBreakY} stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
       <path
-        d={`M ${threeLineLeft} ${threeBreakY} A ${courtLayout.threeRadius} ${courtLayout.threeRadius} 0 0 ${arcSweep} ${threeLineRight} ${threeBreakY}`}
+        d={`M ${threeLineLeft} ${threeBreakY} A ${threeRadius} ${threeRadius} 0 0 ${arcSweep} ${threeLineRight} ${threeBreakY}`}
         fill="none"
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
