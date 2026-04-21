@@ -263,14 +263,25 @@ function BasketEnd({
 }
 
 function HalfCourtShape() {
-  const frame = createCourtFrame(courtLayout.halfCourtLengthM, "bottom");
+  const frame: CourtFrame = {
+    left: courtLayout.inset,
+    right: boardWidth - courtLayout.inset,
+    top: courtLayout.inset,
+    bottom: boardHeight - courtLayout.inset,
+    width: boardWidth - courtLayout.inset * 2,
+    height: boardHeight - courtLayout.inset * 2,
+    scale: (boardWidth - courtLayout.inset * 2) / courtLayout.courtWidthM,
+    centerX: boardWidth / 2,
+  };
   const lineWidth = Math.max(2, courtLayout.lineWidthM * frame.scale);
+  const centerLineY = frame.top + 88;
+  const centerCircleRadius = courtLayout.centerCircleRadiusM * frame.scale;
 
   return (
     <>
       <rect x={frame.left} y={frame.top} width={frame.width} height={frame.height} fill="url(#court-wood-pattern)" stroke="var(--court-marking)" strokeWidth={lineWidth} />
-      <line x1={frame.left - 0.15 * frame.scale} y1={frame.top} x2={frame.right + 0.15 * frame.scale} y2={frame.top} stroke="var(--court-marking)" strokeWidth={lineWidth} />
-      <path d={getHorizontalArcPath(frame.centerX, frame.top, courtLayout.centerCircleRadiusM * frame.scale, "down")} fill="none" stroke="var(--court-marking)" strokeWidth={lineWidth} />
+      <line x1={frame.left} y1={centerLineY} x2={frame.right} y2={centerLineY} stroke="var(--court-marking)" strokeWidth={lineWidth} />
+      <path d={getHorizontalArcPath(frame.centerX, centerLineY, centerCircleRadius, "down")} fill="none" stroke="var(--court-marking)" strokeWidth={lineWidth} />
       <BasketEnd frame={frame} endlineY={frame.bottom} orientation="bottom" />
     </>
   );
