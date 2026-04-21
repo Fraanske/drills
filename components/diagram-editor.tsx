@@ -86,10 +86,6 @@ function getZigZagArrowPoints(arrow: DraftArrow) {
 
 function getWavyArrowPoints(arrow: DraftArrow) {
   const start = { x: arrow.x1, y: arrow.y1 };
-  const control =
-    typeof arrow.cx === "number" && typeof arrow.cy === "number"
-      ? { x: arrow.cx, y: arrow.cy }
-      : { x: (arrow.x1 + arrow.x2) / 2, y: (arrow.y1 + arrow.y2) / 2 };
   const end = { x: arrow.x2, y: arrow.y2 };
   const segments = 36;
   const amplitude = 8;
@@ -98,11 +94,10 @@ function getWavyArrowPoints(arrow: DraftArrow) {
 
   for (let step = 1; step < segments; step += 1) {
     const t = step / segments;
-    const mt = 1 - t;
-    const x = mt * mt * start.x + 2 * mt * t * control.x + t * t * end.x;
-    const y = mt * mt * start.y + 2 * mt * t * control.y + t * t * end.y;
-    const tangentX = 2 * mt * (control.x - start.x) + 2 * t * (end.x - control.x);
-    const tangentY = 2 * mt * (control.y - start.y) + 2 * t * (end.y - control.y);
+    const x = start.x + (end.x - start.x) * t;
+    const y = start.y + (end.y - start.y) * t;
+    const tangentX = end.x - start.x;
+    const tangentY = end.y - start.y;
     const tangentLength = Math.hypot(tangentX, tangentY) || 1;
     const normalX = -tangentY / tangentLength;
     const normalY = tangentX / tangentLength;
