@@ -17,22 +17,27 @@ type DraftArrow = Extract<DiagramObject, { type: "arrow" }>;
 const boardWidth = 520;
 const boardHeight = 920;
 const courtLayout = {
-  inset: 22,
+  insetX: 60,
+  insetY: 42,
   lineWidth: 2.5,
-  hoopRadius: 8,
-  backboardWidth: 72,
-  laneWidth: 138,
-  laneDepth: 182,
-  freeThrowRadius: 54,
-  restrictedRadius: 34,
-  centerCircleRadius: 52,
-  threeRadius: 240,
-  threeSideInset: 26,
-  laneMarkOffsets: [36, 62, 88, 114],
-  noChargeStub: 18,
-  halfMidcourtY: 170,
-  throwInMarkOffset: 158,
-  throwInMarkLength: 18,
+  courtWidthM: 15,
+  fullCourtLengthM: 28,
+  halfCourtLengthM: 14,
+  centerCircleRadiusM: 1.8,
+  keyHalfWidthM: 2.45,
+  freeThrowCircleRadiusM: 1.8,
+  freeThrowLineDistanceM: 5.8,
+  hoopCenterFromBaselineM: 1.575,
+  hoopRadiusM: 0.225,
+  backboardWidthM: 1.8,
+  backboardFromBaselineM: 1.2,
+  restrictedRadiusM: 1.25,
+  restrictedStubM: 0.375,
+  threePointRadiusM: 6.75,
+  threePointSideOffsetM: 0.9,
+  laneMarkDistancesM: [1.75, 2.6, 3.45, 4.3],
+  throwInMarkDistanceM: 8.325,
+  throwInMarkLengthPx: 18,
 } as const;
 const diagramColors: DiagramColor[] = ["blue", "red", "yellow", "green", "white"];
 const colorStyles: Record<DiagramColor, { fill: string; stroke: string; text: string }> = {
@@ -110,30 +115,75 @@ function CourtDefs() {
 }
 
 type BasketOrientation = "top" | "bottom";
-function getHalfArcPath(centerX: number, centerY: number, radius: number, sweepFlag: 0 | 1) {
-  return `M ${centerX - radius} ${centerY} A ${radius} ${radius} 0 0 ${sweepFlag} ${centerX + radius} ${centerY}`;
+
+type CourtModel = {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+  width: number;
+  height: number;
+  xScale: number;
+  yScale: number;
+  mapX: (meters: number) => number;
+  mapY: (meters: number) => number;
+};
+
+function getHalfArcPath(centerX: number, centerY: number, radiusX: number, radiusY: number, sweepFlag: 0 | 1) {
+  return `M ${centerX - radiusX} ${centerY} A ${radiusX} ${radiusY} 0 0 ${sweepFlag} ${centerX + radiusX} ${centerY}`;
 }
 
-function getCourtBounds() {
+function createFullCourtModel(): CourtModel {
+  const width = boardWidth - courtLayout.insetX * 2;
+  const xScale = width / courtLayout.courtWidthM;
+  const yScale = xScale;
+  const height = courtLayout.fullCourtLengthM * yScale;
+  const left = courtLayout.insetX;
+  const top = (boardHeight - height) / 2;
+
   return {
-    left: 52,
-    right: boardWidth - 52,
-    top: 38,
-    bottom: boardHeight - 38,
-    centerX: boardWidth / 2,
-    centerY: boardHeight / 2,
-  } as const;
+    left,
+    right: left + width,
+    top,
+    bottom: top + height,
+    width,
+    height,
+    xScale,
+    yScale,
+    mapX: (meters) => left + meters * xScale,
+    mapY: (meters) => top + meters * yScale,
+  };
 }
 
-function CourtSurface() {
-  const bounds = getCourtBounds();
+function createHalfCourtModel(): CourtModel {
+  const left = courtLayout.insetX;
+  const top = courtLayout.insetY;
+  const width = boardWidth - courtLayout.insetX * 2;
+  const height = boardHeight - courtLayout.insetY * 2;
+  const xScale = width / courtLayout.courtWidthM;
+  const yScale = height / courtLayout.halfCourtLengthM;
 
+  return {
+    left,
+    right: left + width,
+    top,
+    bottom: top + height,
+    width,
+    height,
+    xScale,
+    yScale,
+    mapX: (meters) => left + meters * xScale,
+    mapY: (meters) => top + meters * yScale,
+  };
+}
+
+function CourtSurface({ model }: { model: CourtModel }) {
   return (
     <rect
-      x={bounds.left}
-      y={bounds.top}
-      width={bounds.right - bounds.left}
-      height={bounds.bottom - bounds.top}
+      x={model.left}
+      y={model.top}
+      width={model.width}
+      height={model.height}
       fill="url(#court-wood-pattern)"
       stroke="var(--court-marking)"
       strokeWidth={courtLayout.lineWidth}
@@ -141,92 +191,118 @@ function CourtSurface() {
   );
 }
 
-function CourtEnd({
-  left,
-  right,
-  baselineY,
+function BasketEnd({
+  model,
+  baselineMeters,
   orientation,
 }: {
-  left: number;
-  right: number;
-  baselineY: number;
+  model: CourtModel;
+  baselineMeters: number;
   orientation: BasketOrientation;
 }) {
-  const inward = orientation === "top" ? 1 : -1;
-  const centerX = (left + right) / 2;
-  const laneLeft = centerX - courtLayout.laneWidth / 2;
-  const laneRight = centerX + courtLayout.laneWidth / 2;
-  const hoopY = baselineY + inward * 48;
-  const backboardY = baselineY + inward * 28;
-  const freeThrowY = baselineY + inward * courtLayout.laneDepth;
-  const threeLeftX = left + courtLayout.threeSideInset;
-  const threeRightX = right - courtLayout.threeSideInset;
-  const threeBreakOffset = Math.sqrt(
-    Math.max(0, courtLayout.threeRadius * courtLayout.threeRadius - (centerX - threeLeftX) ** 2),
+  const direction = orientation === "top" ? 1 : -1;
+  const centerX = model.mapX(courtLayout.courtWidthM / 2);
+  const laneLeft = model.mapX(courtLayout.courtWidthM / 2 - courtLayout.keyHalfWidthM);
+  const laneRight = model.mapX(courtLayout.courtWidthM / 2 + courtLayout.keyHalfWidthM);
+  const baselineY = model.mapY(baselineMeters);
+  const hoopY = model.mapY(baselineMeters + direction * courtLayout.hoopCenterFromBaselineM);
+  const backboardY = model.mapY(baselineMeters + direction * courtLayout.backboardFromBaselineM);
+  const freeThrowY = model.mapY(baselineMeters + direction * courtLayout.freeThrowLineDistanceM);
+  const threePointBreakOffsetM = Math.sqrt(
+    Math.max(
+      0,
+      courtLayout.threePointRadiusM ** 2 - (courtLayout.courtWidthM / 2 - courtLayout.threePointSideOffsetM) ** 2,
+    ),
   );
-  const threeBreakY = hoopY + inward * threeBreakOffset;
-  const courtSweep = orientation === "top" ? 1 : 0;
-  const basketSweep = orientation === "top" ? 0 : 1;
+  const threeLeftX = model.mapX(courtLayout.threePointSideOffsetM);
+  const threeRightX = model.mapX(courtLayout.courtWidthM - courtLayout.threePointSideOffsetM);
+  const threeBreakY = model.mapY(baselineMeters + direction * (courtLayout.hoopCenterFromBaselineM + threePointBreakOffsetM));
+  const courtSweep: 0 | 1 = orientation === "top" ? 1 : 0;
+  const basketSweep: 0 | 1 = orientation === "top" ? 0 : 1;
+  const keyTop = Math.min(baselineY, freeThrowY);
+  const keyHeight = Math.abs(freeThrowY - baselineY);
+  const laneMarkLength = 10;
+  const restrictedStubY = model.mapY(
+    baselineMeters + direction * (courtLayout.hoopCenterFromBaselineM + courtLayout.restrictedStubM),
+  );
 
   return (
     <g>
       <rect
         x={laneLeft}
-        y={Math.min(baselineY, freeThrowY)}
-        width={courtLayout.laneWidth}
-        height={Math.abs(freeThrowY - baselineY)}
+        y={keyTop}
+        width={laneRight - laneLeft}
+        height={keyHeight}
         fill="var(--court-paint-fill)"
         stroke="var(--court-paint-line)"
         strokeWidth={courtLayout.lineWidth}
       />
-      <line
-        x1={centerX - courtLayout.freeThrowRadius}
-        y1={freeThrowY}
-        x2={centerX + courtLayout.freeThrowRadius}
-        y2={freeThrowY}
-        stroke="var(--court-marking)"
-        strokeWidth={courtLayout.lineWidth}
-      />
       <path
-        d={getHalfArcPath(centerX, freeThrowY, courtLayout.freeThrowRadius, courtSweep)}
+        d={getHalfArcPath(
+          centerX,
+          freeThrowY,
+          courtLayout.freeThrowCircleRadiusM * model.xScale,
+          courtLayout.freeThrowCircleRadiusM * model.yScale,
+          courtSweep,
+        )}
         fill="none"
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
       />
       <path
-        d={getHalfArcPath(centerX, freeThrowY, courtLayout.freeThrowRadius, basketSweep)}
+        d={getHalfArcPath(
+          centerX,
+          freeThrowY,
+          courtLayout.freeThrowCircleRadiusM * model.xScale,
+          courtLayout.freeThrowCircleRadiusM * model.yScale,
+          basketSweep,
+        )}
         fill="none"
         stroke="var(--court-marking)"
         strokeWidth="2"
         strokeDasharray="8 8"
       />
       <line
-        x1={centerX - courtLayout.backboardWidth / 2}
+        x1={centerX - (courtLayout.backboardWidthM * model.xScale) / 2}
         y1={backboardY}
-        x2={centerX + courtLayout.backboardWidth / 2}
+        x2={centerX + (courtLayout.backboardWidthM * model.xScale) / 2}
         y2={backboardY}
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
       />
-      <circle cx={centerX} cy={hoopY} r={courtLayout.hoopRadius} fill="none" stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
-      <line
-        x1={centerX - courtLayout.restrictedRadius}
-        y1={hoopY}
-        x2={centerX - courtLayout.restrictedRadius}
-        y2={hoopY + inward * courtLayout.noChargeStub}
+      <ellipse
+        cx={centerX}
+        cy={hoopY}
+        rx={courtLayout.hoopRadiusM * model.xScale}
+        ry={courtLayout.hoopRadiusM * model.yScale}
+        fill="none"
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
       />
       <line
-        x1={centerX + courtLayout.restrictedRadius}
+        x1={centerX - courtLayout.restrictedRadiusM * model.xScale}
         y1={hoopY}
-        x2={centerX + courtLayout.restrictedRadius}
-        y2={hoopY + inward * courtLayout.noChargeStub}
+        x2={centerX - courtLayout.restrictedRadiusM * model.xScale}
+        y2={restrictedStubY}
+        stroke="var(--court-marking)"
+        strokeWidth={courtLayout.lineWidth}
+      />
+      <line
+        x1={centerX + courtLayout.restrictedRadiusM * model.xScale}
+        y1={hoopY}
+        x2={centerX + courtLayout.restrictedRadiusM * model.xScale}
+        y2={restrictedStubY}
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
       />
       <path
-        d={getHalfArcPath(centerX, hoopY, courtLayout.restrictedRadius, courtSweep)}
+        d={getHalfArcPath(
+          centerX,
+          hoopY,
+          courtLayout.restrictedRadiusM * model.xScale,
+          courtLayout.restrictedRadiusM * model.yScale,
+          courtSweep,
+        )}
         fill="none"
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
@@ -234,17 +310,17 @@ function CourtEnd({
       <line x1={threeLeftX} y1={baselineY} x2={threeLeftX} y2={threeBreakY} stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
       <line x1={threeRightX} y1={baselineY} x2={threeRightX} y2={threeBreakY} stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
       <path
-        d={`M ${threeLeftX} ${threeBreakY} A ${courtLayout.threeRadius} ${courtLayout.threeRadius} 0 0 ${courtSweep} ${threeRightX} ${threeBreakY}`}
+        d={`M ${threeLeftX} ${threeBreakY} A ${courtLayout.threePointRadiusM * model.xScale} ${courtLayout.threePointRadiusM * model.yScale} 0 0 ${courtSweep} ${threeRightX} ${threeBreakY}`}
         fill="none"
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
       />
-      {courtLayout.laneMarkOffsets.map((offset) => {
-        const y = baselineY + inward * offset;
+      {courtLayout.laneMarkDistancesM.map((distance) => {
+        const y = model.mapY(baselineMeters + direction * distance);
         return (
-          <g key={offset}>
-            <line x1={laneLeft - 10} y1={y} x2={laneLeft} y2={y} stroke="var(--court-marking)" strokeWidth="2" />
-            <line x1={laneRight} y1={y} x2={laneRight + 10} y2={y} stroke="var(--court-marking)" strokeWidth="2" />
+          <g key={distance}>
+            <line x1={laneLeft - laneMarkLength} y1={y} x2={laneLeft} y2={y} stroke="var(--court-marking)" strokeWidth="2" />
+            <line x1={laneRight} y1={y} x2={laneRight + laneMarkLength} y2={y} stroke="var(--court-marking)" strokeWidth="2" />
           </g>
         );
       })}
@@ -253,69 +329,89 @@ function CourtEnd({
 }
 
 function HalfCourtShape() {
-  const bounds = getCourtBounds();
+  const model = createHalfCourtModel();
 
   return (
     <>
-      <CourtSurface />
+      <CourtSurface model={model} />
       <line
-        x1={bounds.left}
-        y1={courtLayout.halfMidcourtY}
-        x2={bounds.right}
-        y2={courtLayout.halfMidcourtY}
+        x1={model.left}
+        y1={model.mapY(0)}
+        x2={model.right}
+        y2={model.mapY(0)}
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
       />
       <path
-        d={getHalfArcPath(bounds.centerX, courtLayout.halfMidcourtY, courtLayout.centerCircleRadius, 1)}
+        d={getHalfArcPath(
+          model.mapX(courtLayout.courtWidthM / 2),
+          model.mapY(0),
+          courtLayout.centerCircleRadiusM * model.xScale,
+          courtLayout.centerCircleRadiusM * model.yScale,
+          1,
+        )}
         fill="none"
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
       />
-      <CourtEnd left={bounds.left} right={bounds.right} baselineY={bounds.bottom} orientation="bottom" />
+      <BasketEnd model={model} baselineMeters={courtLayout.halfCourtLengthM} orientation="bottom" />
     </>
   );
 }
 
 function FullCourtShape() {
-  const bounds = getCourtBounds();
+  const model = createFullCourtModel();
 
   return (
     <>
-      <CourtSurface />
-      <CourtEnd left={bounds.left} right={bounds.right} baselineY={bounds.top} orientation="top" />
-      <CourtEnd left={bounds.left} right={bounds.right} baselineY={bounds.bottom} orientation="bottom" />
-      <line x1={bounds.left} y1={bounds.centerY} x2={bounds.right} y2={bounds.centerY} stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
-      <circle cx={bounds.centerX} cy={bounds.centerY} r={courtLayout.centerCircleRadius} fill="var(--court-paint-fill)" stroke="var(--court-marking)" strokeWidth={courtLayout.lineWidth} />
+      <CourtSurface model={model} />
+      <BasketEnd model={model} baselineMeters={0} orientation="top" />
+      <BasketEnd model={model} baselineMeters={courtLayout.fullCourtLengthM} orientation="bottom" />
       <line
-        x1={bounds.left - courtLayout.throwInMarkLength}
-        y1={bounds.top + courtLayout.throwInMarkOffset}
-        x2={bounds.left}
-        y2={bounds.top + courtLayout.throwInMarkOffset}
+        x1={model.left}
+        y1={model.mapY(courtLayout.fullCourtLengthM / 2)}
+        x2={model.right}
+        y2={model.mapY(courtLayout.fullCourtLengthM / 2)}
+        stroke="var(--court-marking)"
+        strokeWidth={courtLayout.lineWidth}
+      />
+      <circle
+        cx={model.mapX(courtLayout.courtWidthM / 2)}
+        cy={model.mapY(courtLayout.fullCourtLengthM / 2)}
+        r={courtLayout.centerCircleRadiusM * model.xScale}
+        fill="var(--court-paint-fill)"
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
       />
       <line
-        x1={bounds.right}
-        y1={bounds.top + courtLayout.throwInMarkOffset}
-        x2={bounds.right + courtLayout.throwInMarkLength}
-        y2={bounds.top + courtLayout.throwInMarkOffset}
+        x1={model.left - courtLayout.throwInMarkLengthPx}
+        y1={model.mapY(courtLayout.throwInMarkDistanceM)}
+        x2={model.left}
+        y2={model.mapY(courtLayout.throwInMarkDistanceM)}
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
       />
       <line
-        x1={bounds.left - courtLayout.throwInMarkLength}
-        y1={bounds.bottom - courtLayout.throwInMarkOffset}
-        x2={bounds.left}
-        y2={bounds.bottom - courtLayout.throwInMarkOffset}
+        x1={model.right}
+        y1={model.mapY(courtLayout.throwInMarkDistanceM)}
+        x2={model.right + courtLayout.throwInMarkLengthPx}
+        y2={model.mapY(courtLayout.throwInMarkDistanceM)}
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
       />
       <line
-        x1={bounds.right}
-        y1={bounds.bottom - courtLayout.throwInMarkOffset}
-        x2={bounds.right + courtLayout.throwInMarkLength}
-        y2={bounds.bottom - courtLayout.throwInMarkOffset}
+        x1={model.left - courtLayout.throwInMarkLengthPx}
+        y1={model.mapY(courtLayout.fullCourtLengthM - courtLayout.throwInMarkDistanceM)}
+        x2={model.left}
+        y2={model.mapY(courtLayout.fullCourtLengthM - courtLayout.throwInMarkDistanceM)}
+        stroke="var(--court-marking)"
+        strokeWidth={courtLayout.lineWidth}
+      />
+      <line
+        x1={model.right}
+        y1={model.mapY(courtLayout.fullCourtLengthM - courtLayout.throwInMarkDistanceM)}
+        x2={model.right + courtLayout.throwInMarkLengthPx}
+        y2={model.mapY(courtLayout.fullCourtLengthM - courtLayout.throwInMarkDistanceM)}
         stroke="var(--court-marking)"
         strokeWidth={courtLayout.lineWidth}
       />
