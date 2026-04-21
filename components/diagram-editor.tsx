@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CircleDot, Cone, HelpCircle, MoveRight, PenLine, Play, Redo2, Save, Spline, StickyNote, Undo2, Users, X } from "lucide-react";
+import { CircleDot, Cone, HelpCircle, MoveRight, PenLine, Play, Redo2, Save, Spline, StickyNote, Undo2, X } from "lucide-react";
 import type { DiagramColor, DiagramObject, DiagramPayload, DiagramSlide } from "@/lib/types";
 import { createEmptySlide } from "@/lib/diagram";
 
@@ -9,7 +9,7 @@ function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-type Tool = "select" | "player" | "cone" | "ball" | "straightArrow" | "curvedArrow" | "text";
+type Tool = "player" | "cone" | "ball" | "straightArrow" | "curvedArrow" | "text";
 type Point = { x: number; y: number };
 type DraftArrow = Extract<DiagramObject, { type: "arrow" }>;
 
@@ -584,7 +584,6 @@ export function DiagramEditor({
     };
     setActiveSlideObjects((current) => [...current, next]);
     setActiveObjectId(next.id);
-    setTool("select");
   }
 
   function placePresetObject(type: "ball" | "cone") {
@@ -608,7 +607,6 @@ export function DiagramEditor({
           } as Extract<DiagramObject, { type: "cone" }>);
     setActiveSlideObjects((current) => [...current, next]);
     setActiveObjectId(next.id);
-    setTool("select");
   }
 
   function addObject(point: Point) {
@@ -705,11 +703,6 @@ export function DiagramEditor({
 
     if (tool === "curvedArrow") {
       setDraftArrow(createArrow(point, point, "curved", activeItemColor));
-      setActiveObjectId(null);
-      return;
-    }
-
-    if (tool === "select") {
       setActiveObjectId(null);
       return;
     }
@@ -1246,27 +1239,6 @@ export function DiagramEditor({
                     </button>
                   ))}
                 </div>
-                <div className="grid grid-cols-6 gap-3">
-                  {["1", "2", "3", "4", "5", "?"].map((label) => (
-                    <button key={`plain-${label}`} type="button" onClick={() => placeLabeledPlayer(label, "white")} className="rounded-lg border border-slate-300 bg-white px-2 py-3 text-sm font-semibold text-slate-700">
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <div className="grid grid-cols-6 gap-3">
-                  {["X1", "X2", "X3", "X4", "X5", "X?"].map((label) => (
-                    <button key={label} type="button" onClick={() => placeLabeledPlayer(label, "blue")} className="rounded-lg border border-slate-300 bg-white px-2 py-3 text-sm font-semibold text-slate-700">
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <div className="grid grid-cols-6 gap-3">
-                  {["1", "2", "3", "4", "5", "?"].map((label) => (
-                    <button key={`ballrow-${label}`} type="button" onClick={() => placeLabeledPlayer(label, "white")} className="rounded-lg border border-slate-300 bg-white px-2 py-3 text-sm font-semibold text-slate-700">
-                      {label}•
-                    </button>
-                  ))}
-                </div>
               </div>
             </section>
 
@@ -1282,7 +1254,6 @@ export function DiagramEditor({
                 <button type="button" onClick={() => { setTool("straightArrow"); setActiveItemColor("white"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><MoveRight size={18} /></button>
                 <button type="button" onClick={() => { setTool("curvedArrow"); setActiveItemColor("yellow"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Spline size={18} /></button>
                 <button type="button" onClick={() => { setTool("text"); setTextTemplate("Note"); }} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><StickyNote size={18} /></button>
-                <button type="button" onClick={() => setTool("select")} className="flex h-12 items-center justify-center rounded-lg border border-slate-300 text-slate-700"><Users size={18} /></button>
               </div>
             </section>
 
