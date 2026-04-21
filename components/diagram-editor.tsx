@@ -144,9 +144,21 @@ function getArcBetweenPoints(
 ) {
   const dx = Math.abs(startX - centerX);
   const dy = Math.sqrt(Math.max(0, radius * radius - dx * dx));
-  const y = orientation === "top" ? centerY + dy : centerY - dy;
-  const sweepFlag: 0 | 1 = orientation === "top" ? 1 : 0;
-  return `M ${startX} ${y} A ${radius} ${radius} 0 0 ${sweepFlag} ${endX} ${y}`;
+  const angleOffset = Math.atan2(dy, dx);
+  const startAngle = orientation === "top" ? Math.PI - angleOffset : -Math.PI + angleOffset;
+  const endAngle = orientation === "top" ? angleOffset : -angleOffset;
+  const steps = 24;
+  const points: string[] = [];
+
+  for (let step = 0; step <= steps; step += 1) {
+    const t = step / steps;
+    const angle = startAngle + (endAngle - startAngle) * t;
+    const x = centerX + Math.cos(angle) * radius;
+    const y = centerY + Math.sin(angle) * radius;
+    points.push(`${step === 0 ? "M" : "L"} ${x} ${y}`);
+  }
+
+  return points.join(" ");
 }
 
 function createFullCourtModel(): CourtModel {
