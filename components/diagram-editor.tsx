@@ -185,12 +185,18 @@ function createFullCourtModel(): CourtModel {
 }
 
 function createHalfCourtModel(): CourtModel {
-  const left = courtLayout.insetX;
-  const top = courtLayout.insetY;
-  const width = boardWidth - courtLayout.insetX * 2;
-  const height = boardHeight - courtLayout.insetY * 2;
-  const xScale = width / courtLayout.courtWidthM;
-  const yScale = height / courtLayout.halfCourtLengthM;
+  const availableWidth = boardWidth - courtLayout.insetX * 2;
+  const availableHeight = boardHeight - courtLayout.insetY * 2;
+  const scale = Math.min(
+    availableWidth / courtLayout.courtWidthM,
+    availableHeight / courtLayout.halfCourtLengthM,
+  );
+  const width = courtLayout.courtWidthM * scale;
+  const height = courtLayout.halfCourtLengthM * scale;
+  const left = (boardWidth - width) / 2;
+  const top = (boardHeight - height) / 2;
+  const xScale = scale;
+  const yScale = scale;
 
   return {
     left,
