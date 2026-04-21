@@ -14,8 +14,8 @@ type PanelTab = "phases" | "objects";
 type Point = { x: number; y: number };
 type DraftArrow = Extract<DiagramObject, { type: "arrow" }>;
 
-const boardWidth = 520;
-const boardHeight = 920;
+const fullCourtCanvas = { width: 520, height: 920 } as const;
+const halfCourtCanvas = { width: 920, height: 520 } as const;
 const courtLayout = {
   insetX: 60,
   insetY: 42,
@@ -115,6 +115,7 @@ function CourtDefs() {
 }
 
 type BasketOrientation = "top" | "bottom";
+type CanvasDimensions = { width: number; height: number };
 
 type CourtModel = {
   left: number;
@@ -129,6 +130,10 @@ type CourtModel = {
   mapX: (meters: number) => number;
   mapY: (meters: number) => number;
 };
+
+function getCanvasDimensions(courtType: DiagramSlide["courtType"]): CanvasDimensions {
+  return courtType === "full_court" ? fullCourtCanvas : halfCourtCanvas;
+}
 
 function getHalfArcPath(centerX: number, centerY: number, radiusX: number, radiusY: number, sweepFlag: 0 | 1) {
   return `M ${centerX - radiusX} ${centerY} A ${radiusX} ${radiusY} 0 0 ${sweepFlag} ${centerX + radiusX} ${centerY}`;
@@ -162,12 +167,12 @@ function getArcBetweenPoints(
 }
 
 function createFullCourtModel(): CourtModel {
-  const width = boardWidth - courtLayout.insetX * 2;
+  const width = fullCourtCanvas.width - courtLayout.insetX * 2;
   const xScale = width / courtLayout.courtWidthM;
   const yScale = xScale;
   const height = courtLayout.fullCourtLengthM * yScale;
   const left = courtLayout.insetX;
-  const top = (boardHeight - height) / 2;
+  const top = (fullCourtCanvas.height - height) / 2;
 
   return {
     left,
@@ -185,16 +190,16 @@ function createFullCourtModel(): CourtModel {
 }
 
 function createHalfCourtModel(): CourtModel {
-  const availableWidth = boardWidth - 8;
-  const availableHeight = boardHeight - 180;
+  const availableWidth = halfCourtCanvas.width - 44;
+  const availableHeight = halfCourtCanvas.height - 36;
   const scale = Math.min(
     availableWidth / courtLayout.courtWidthM,
     availableHeight / courtLayout.halfCourtLengthM,
   );
   const width = courtLayout.courtWidthM * scale;
   const height = courtLayout.halfCourtLengthM * scale;
-  const left = (boardWidth - width) / 2;
-  const top = boardHeight - height - 28;
+  const left = (halfCourtCanvas.width - width) / 2;
+  const top = (halfCourtCanvas.height - height) / 2;
   const xScale = scale;
   const yScale = scale;
 
@@ -554,17 +559,21 @@ export function DiagramEditor({
   function pointFromMouse(event: React.MouseEvent<SVGElement>) {
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect) return { x: 0, y: 0 };
-    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    const canvas = getCanvasDimensions(activeSlide?.courtType ?? "half_court");
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * canvas.width,
+      y: ((event.clientY - rect.top) / rect.height) * canvas.height,
+    };
   }
 
   function getPresetPoint(index: number) {
     const halfCourtPresets: Point[] = [
-      { x: 260, y: 770 },
-      { x: 180, y: 700 },
-      { x: 340, y: 700 },
-      { x: 120, y: 620 },
-      { x: 400, y: 620 },
-      { x: 260, y: 540 },
+      { x: 460, y: 430 },
+      { x: 360, y: 390 },
+      { x: 560, y: 390 },
+      { x: 320, y: 325 },
+      { x: 600, y: 325 },
+      { x: 460, y: 250 },
     ];
     const fullCourtPresets: Point[] = [
       { x: 260, y: 780 },
@@ -881,14 +890,14 @@ export function DiagramEditor({
             { id: uid(), type: "text", x: 290, y: 860, text: "Transition", color: "blue" },
           ]
         : [
-            { id: uid(), type: "player", x: 260, y: 790, label: "1", color: "white" },
-            { id: uid(), type: "player", x: 180, y: 700, label: "2", color: "white" },
-            { id: uid(), type: "player", x: 340, y: 700, label: "3", color: "white" },
-            { id: uid(), type: "player", x: 135, y: 615, label: "4", color: "white" },
-            { id: uid(), type: "player", x: 385, y: 615, label: "5", color: "white" },
-            { id: uid(), type: "arrow", style: "curved", x1: 260, y1: 790, x2: 195, y2: 650, cx: 210, cy: 730, color: "yellow" },
-            { id: uid(), type: "arrow", style: "straight", x1: 340, y1: 700, x2: 260, y2: 510, color: "green" },
-            { id: uid(), type: "cone", x: 260, y: 465, color: "red" },
+            { id: uid(), type: "player", x: 460, y: 430, label: "1", color: "white" },
+            { id: uid(), type: "player", x: 360, y: 390, label: "2", color: "white" },
+            { id: uid(), type: "player", x: 560, y: 390, label: "3", color: "white" },
+            { id: uid(), type: "player", x: 320, y: 330, label: "4", color: "white" },
+            { id: uid(), type: "player", x: 600, y: 330, label: "5", color: "white" },
+            { id: uid(), type: "arrow", style: "curved", x1: 460, y1: 430, x2: 375, y2: 325, cx: 405, cy: 385, color: "yellow" },
+            { id: uid(), type: "arrow", style: "straight", x1: 560, y1: 390, x2: 460, y2: 250, color: "green" },
+            { id: uid(), type: "cone", x: 460, y: 225, color: "red" },
           ];
 
     setActiveSlideObjects(() => sampleObjects);
@@ -1079,8 +1088,8 @@ export function DiagramEditor({
                   >
                     <div className="rounded-lg bg-[#f4e3c4] p-1">
                       <svg
-                        viewBox={`0 0 ${boardWidth} ${boardHeight}`}
-                        className={`w-full rounded-lg bg-[#f0d5a9] ${slide.courtType === "full_court" ? "h-36" : "h-28"}`}
+                        viewBox={`0 0 ${getCanvasDimensions(slide.courtType).width} ${getCanvasDimensions(slide.courtType).height}`}
+                        className={`w-full rounded-lg bg-[#f0d5a9] ${slide.courtType === "full_court" ? "h-36" : "h-20"}`}
                       >
                         <CourtDefs />
                         {slide.courtType === "full_court" ? <FullCourtShape /> : <HalfCourtShape />}
@@ -1115,8 +1124,8 @@ export function DiagramEditor({
               <div className="rounded-[1.25rem] bg-[#f0d5a9] p-4 shadow-inner">
               <svg
                 ref={svgRef}
-                viewBox={`0 0 ${boardWidth} ${boardHeight}`}
-                className={`mx-auto w-full rounded-[1rem] bg-[#f0d5a9] ${activeSlide.courtType === "full_court" ? "aspect-[13/23] max-w-[520px]" : "aspect-[16/10] max-w-[1100px]"}`}
+                viewBox={`0 0 ${getCanvasDimensions(activeSlide.courtType).width} ${getCanvasDimensions(activeSlide.courtType).height}`}
+                className={`mx-auto w-full rounded-[1rem] bg-[#f0d5a9] ${activeSlide.courtType === "full_court" ? "aspect-[13/23] max-w-[520px]" : "aspect-[16/9] max-w-[1100px]"}`}
                 onMouseDown={onBoardMouseDown}
                 onMouseMove={onBoardMouseMove}
                 onMouseUp={onBoardMouseUp}
